@@ -7,11 +7,14 @@ using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Controls.Primitives;
 using System.Windows.Navigation;
+using System.Windows.Threading;
+using System.Windows.Shapes;
+using System.Windows.Media.TextFormatting;
 
 namespace ScriptExecutorUI
 {
@@ -32,55 +35,75 @@ namespace ScriptExecutorUI
         private ScrollViewer _editorScrollViewer;
         private ScrollViewer _overlayScrollViewer;
         private bool _isRealtimeHelperEnabled = true;
+        private Rectangle _caretOverlay;
+        private DispatcherTimer _caretBlinkTimer;
+        private string _lastText = "";
+        private int _lastCaretIndex = 0;
+        private readonly object _syncLock = new object();
+
+        private double MeasureSpaceWidth()
+        {
+            var testRun = new Run(" ");
+            testRun.FontFamily = new FontFamily("Consolas");
+            testRun.FontSize = 13;
+            var formatted = new FormattedText(
+                " ",
+                System.Globalization.CultureInfo.CurrentUICulture,
+                FlowDirection.LeftToRight,
+                new Typeface("Consolas"),
+                13,
+                Brushes.Black);
+            return formatted.Width;
+        }
         private readonly SuggestionItem[] _suncSuggestions =
         {
-            new SuggestionItem { Name = "print", Signature = "print(...: T...) : ()", Description = "Prints all provided values to the output.", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#print" },
-            new SuggestionItem { Name = "warn", Description = "Output warning message.", Signature = "warn(...: T...) : ()", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#warn" },
-            new SuggestionItem { Name = "error", Description = "Throw an error and stop execution.", Signature = "error(message: string, level: number?) : ()", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#error" },
-            new SuggestionItem { Name = "task.wait", Description = "Yield current thread for duration.", Signature = "task.wait(duration: number?) : number", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/libraries/task#wait" },
-            new SuggestionItem { Name = "task.spawn", Description = "Run function asynchronously.", Signature = "task.spawn(f: function, ...: any) : thread", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/libraries/task#spawn" },
-            new SuggestionItem { Name = "task.delay", Description = "Run function after delay.", Signature = "task.delay(duration: number, f: function, ...: any) : thread", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/libraries/task#delay" },
-            new SuggestionItem { Name = "pairs", Signature = "pairs(t: table) : (function, table, any)", Description = "Iterate key/value table pairs.", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#pairs" },
-            new SuggestionItem { Name = "ipairs", Description = "Iterate array-like table values.", Signature = "ipairs(t: table) : (function, table, number)", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#ipairs" },
-            new SuggestionItem { Name = "pcall", Signature = "pcall(f: function, ...: any) : (boolean, ...any)", Description = "Call function in protected mode.", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#pcall" },
-            new SuggestionItem { Name = "xpcall", Description = "Protected call with custom handler.", Signature = "xpcall(f: function, msgh: function, ...: any) : (boolean, ...any)", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#xpcall" },
-            new SuggestionItem { Name = "game:GetService(\"Players\")", Description = "Get Players service." },
-            new SuggestionItem { Name = "game:GetService(\"RunService\")", Description = "Get RunService." },
-            new SuggestionItem { Name = "game:GetService(\"TweenService\")", Description = "Get TweenService." },
-            new SuggestionItem { Name = "game:GetService(\"ReplicatedStorage\")", Description = "Get shared storage service." },
-            new SuggestionItem { Name = "workspace", Description = "Top-level 3D world container." },
-            new SuggestionItem { Name = "Instance.new", Description = "Create a new Roblox instance.", Signature = "Instance.new(className: string, parent: Instance?) : Instance" },
-            new SuggestionItem { Name = "Vector3.new", Description = "Create 3D vector value.", Signature = "Vector3.new(x: number, y: number, z: number) : Vector3" },
-            new SuggestionItem { Name = "CFrame.new", Description = "Create position/orientation frame.", Signature = "CFrame.new(x: number, y: number, z: number) : CFrame" },
-            new SuggestionItem { Name = "UDim2.new", Description = "Create 2D UI dimension.", Signature = "UDim2.new(xScale: number, xOffset: number, yScale: number, yOffset: number) : UDim2" },
-            new SuggestionItem { Name = "Color3.fromRGB", Description = "Create RGB color.", Signature = "Color3.fromRGB(r: number, g: number, b: number) : Color3" },
-            new SuggestionItem { Name = "workspace:Raycast", Description = "Cast ray into the world.", Signature = "workspace:Raycast(origin: Vector3, direction: Vector3, params: RaycastParams?) : RaycastResult?" },
-            new SuggestionItem { Name = "RaycastParams.new", Description = "Configure raycast filters.", Signature = "RaycastParams.new() : RaycastParams" },
-            new SuggestionItem { Name = "RemoteEvent:FireServer", Description = "Send event from client to server." },
-            new SuggestionItem { Name = "RemoteFunction:InvokeServer", Description = "Invoke remote function on server." },
-            new SuggestionItem { Name = "RunService.Heartbeat:Connect", Description = "Run callback each frame heartbeat." },
-            new SuggestionItem { Name = "RunService.RenderStepped:Connect", Description = "Run callback each render step." },
-            new SuggestionItem { Name = "Players.PlayerAdded:Connect", Description = "Callback when player joins." },
-            new SuggestionItem { Name = "player.CharacterAdded:Connect", Description = "Callback when character spawns." },
-            new SuggestionItem { Name = "part.Touched:Connect", Description = "Callback when part is touched." },
-            new SuggestionItem { Name = "Instance.Changed:Connect", Description = "Callback when property changes." },
-            new SuggestionItem { Name = "table.insert", Description = "Insert value into table.", Signature = "table.insert(t: table, value: any) : ()" },
-            new SuggestionItem { Name = "table.remove", Description = "Remove value from table.", Signature = "table.remove(t: table, index: number?) : any" },
-            new SuggestionItem { Name = "table.find", Description = "Find value index in table.", Signature = "table.find(t: table, value: any, init: number?) : number?" },
-            new SuggestionItem { Name = "string.split", Description = "Split string by separator.", Signature = "string.split(s: string, sep: string) : {string}" },
-            new SuggestionItem { Name = "string.format", Description = "Format string with placeholders.", Signature = "string.format(fmt: string, ...: any) : string" },
-            new SuggestionItem { Name = "math.clamp", Description = "Clamp number to min/max.", Signature = "math.clamp(n: number, min: number, max: number) : number" },
-            new SuggestionItem { Name = "math.floor", Description = "Round down number.", Signature = "math.floor(n: number) : number" },
-            new SuggestionItem { Name = "math.random", Description = "Generate random number.", Signature = "math.random(m: number?, n: number?) : number" },
-            new SuggestionItem { Name = "TweenInfo.new", Description = "Create tween configuration.", Signature = "TweenInfo.new(time: number, easingStyle: Enum.EasingStyle, easingDirection: Enum.EasingDirection) : TweenInfo" },
-            new SuggestionItem { Name = "Humanoid:MoveTo", Description = "Move humanoid to target point.", Signature = "Humanoid:MoveTo(location: Vector3) : ()" },
-            new SuggestionItem { Name = "Humanoid.Jump", Description = "Trigger humanoid jump." },
-            new SuggestionItem { Name = "function", Description = "Declare a function block." },
-            new SuggestionItem { Name = "local", Description = "Declare local variable." },
-            new SuggestionItem { Name = "if then", Description = "Conditional logic block." },
-            new SuggestionItem { Name = "for do", Description = "Looping construct." },
-            new SuggestionItem { Name = "while do", Description = "While-loop construct." },
-            new SuggestionItem { Name = "repeat until", Description = "Repeat loop construct." }
+            new SuggestionItem { Name = "print ", Signature = "print(...: T...) : () ", Description = "Prints all provided values to the output. ", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#print " },
+            new SuggestionItem { Name = "warn ", Description = "Output warning message. ", Signature = "warn(...: T...) : () ", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#warn " },
+            new SuggestionItem { Name = "error ", Description = "Throw an error and stop execution. ", Signature = "error(message: string, level: number?) : () ", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#error " },
+            new SuggestionItem { Name = "task.wait ", Description = "Yield current thread for duration. ", Signature = "task.wait(duration: number?) : number ", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/libraries/task#wait " },
+            new SuggestionItem { Name = "task.spawn ", Description = "Run function asynchronously. ", Signature = "task.spawn(f: function, ...: any) : thread ", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/libraries/task#spawn " },
+            new SuggestionItem { Name = "task.delay ", Description = "Run function after delay. ", Signature = "task.delay(duration: number, f: function, ...: any) : thread ", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/libraries/task#delay " },
+            new SuggestionItem { Name = "pairs ", Signature = "pairs(t: table) : (function, table, any) ", Description = "Iterate key/value table pairs. ", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#pairs " },
+            new SuggestionItem { Name = "ipairs ", Description = "Iterate array-like table values. ", Signature = "ipairs(t: table) : (function, table, number) ", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#ipairs " },
+            new SuggestionItem { Name = "pcall ", Signature = "pcall(f: function, ...: any) : (boolean, ...any) ", Description = "Call function in protected mode. ", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#pcall " },
+            new SuggestionItem { Name = "xpcall ", Description = "Protected call with custom handler. ", Signature = "xpcall(f: function, msgh: function, ...: any) : (boolean, ...any) ", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#xpcall " },
+            new SuggestionItem { Name = "game:GetService(\"Players\") ", Description = "Get Players service. " },
+            new SuggestionItem { Name = "game:GetService(\"RunService\") ", Description = "Get RunService. " },
+            new SuggestionItem { Name = "game:GetService(\"TweenService\") ", Description = "Get TweenService. " },
+            new SuggestionItem { Name = "game:GetService(\"ReplicatedStorage\") ", Description = "Get shared storage service. " },
+            new SuggestionItem { Name = "workspace ", Description = "Top-level 3D world container. " },
+            new SuggestionItem { Name = "Instance.new ", Description = "Create a new Roblox instance. ", Signature = "Instance.new(className: string, parent: Instance?) : Instance " },
+            new SuggestionItem { Name = "Vector3.new ", Description = "Create 3D vector value. ", Signature = "Vector3.new(x: number, y: number, z: number) : Vector3 " },
+            new SuggestionItem { Name = "CFrame.new ", Description = "Create position/orientation frame. ", Signature = "CFrame.new(x: number, y: number, z: number) : CFrame " },
+            new SuggestionItem { Name = "UDim2.new ", Description = "Create 2D UI dimension. ", Signature = "UDim2.new(xScale: number, xOffset: number, yScale: number, yOffset: number) : UDim2 " },
+            new SuggestionItem { Name = "Color3.fromRGB ", Description = "Create RGB color. ", Signature = "Color3.fromRGB(r: number, g: number, b: number) : Color3 " },
+            new SuggestionItem { Name = "workspace:Raycast ", Description = "Cast ray into the world. ", Signature = "workspace:Raycast(origin: Vector3, direction: Vector3, params: RaycastParams?) : RaycastResult? " },
+            new SuggestionItem { Name = "RaycastParams.new ", Description = "Configure raycast filters. ", Signature = "RaycastParams.new() : RaycastParams " },
+            new SuggestionItem { Name = "RemoteEvent:FireServer ", Description = "Send event from client to server. " },
+            new SuggestionItem { Name = "RemoteFunction:InvokeServer ", Description = "Invoke remote function on server. " },
+            new SuggestionItem { Name = "RunService.Heartbeat:Connect ", Description = "Run callback each frame heartbeat. " },
+            new SuggestionItem { Name = "RunService.RenderStepped:Connect ", Description = "Run callback each render step. " },
+            new SuggestionItem { Name = "Players.PlayerAdded:Connect ", Description = "Callback when player joins. " },
+            new SuggestionItem { Name = "player.CharacterAdded:Connect ", Description = "Callback when character spawns. " },
+            new SuggestionItem { Name = "part.Touched:Connect ", Description = "Callback when part is touched. " },
+            new SuggestionItem { Name = "Instance.Changed:Connect ", Description = "Callback when property changes. " },
+            new SuggestionItem { Name = "table.insert ", Description = "Insert value into table. ", Signature = "table.insert(t: table, value: any) : () " },
+            new SuggestionItem { Name = "table.remove ", Description = "Remove value from table. ", Signature = "table.remove(t: table, index: number?) : any " },
+            new SuggestionItem { Name = "table.find ", Description = "Find value index in table. ", Signature = "table.find(t: table, value: any, init: number?) : number? " },
+            new SuggestionItem { Name = "string.split ", Description = "Split string by separator. ", Signature = "string.split(s: string, sep: string) : {string} " },
+            new SuggestionItem { Name = "string.format ", Description = "Format string with placeholders. ", Signature = "string.format(fmt: string, ...: any) : string " },
+            new SuggestionItem { Name = "math.clamp ", Description = "Clamp number to min/max. ", Signature = "math.clamp(n: number, min: number, max: number) : number " },
+            new SuggestionItem { Name = "math.floor ", Description = "Round down number. ", Signature = "math.floor(n: number) : number " },
+            new SuggestionItem { Name = "math.random ", Description = "Generate random number. ", Signature = "math.random(m: number?, n: number?) : number " },
+            new SuggestionItem { Name = "TweenInfo.new ", Description = "Create tween configuration. ", Signature = "TweenInfo.new(time: number, easingStyle: Enum.EasingStyle, easingDirection: Enum.EasingDirection) : TweenInfo " },
+            new SuggestionItem { Name = "Humanoid:MoveTo ", Description = "Move humanoid to target point. ", Signature = "Humanoid:MoveTo(location: Vector3) : () " },
+            new SuggestionItem { Name = "Humanoid.Jump ", Description = "Trigger humanoid jump. " },
+            new SuggestionItem { Name = "function ", Description = "Declare a function block. " },
+            new SuggestionItem { Name = "local ", Description = "Declare local variable. " },
+            new SuggestionItem { Name = "if then ", Description = "Conditional logic block. " },
+            new SuggestionItem { Name = "for do ", Description = "Looping construct. " },
+            new SuggestionItem { Name = "while do ", Description = "While-loop construct. " },
+            new SuggestionItem { Name = "repeat until ", Description = "Repeat loop construct. " }
         };
 
         public MainWindow()
@@ -102,9 +125,9 @@ namespace ScriptExecutorUI
         {
             Sections = new ObservableCollection<AccordionSection>
             {
-                new AccordionSection { Name = "Tabs", Items = { "Main.lua", "AutoFarm.lua", "ESP.lua" } },
-                new AccordionSection { Name = "Saved Scripts", Items = { "Universal.lua", "Dex.lua", "DarkHub.lua" } },
-                new AccordionSection { Name = "Auto-execute", Items = { "On attach", "On injection", "Custom event" } }
+                new AccordionSection { Name = "Tabs ", Items = { "Main.lua ", "AutoFarm.lua ", "ESP.lua " } },
+                new AccordionSection { Name = "Saved Scripts ", Items = { "Universal.lua ", "Dex.lua ", "DarkHub.lua " } },
+                new AccordionSection { Name = "Auto-execute ", Items = { "On attach ", "On injection ", "Custom event " } }
             };
             AccordionItems.ItemsSource = Sections;
         }
@@ -126,7 +149,7 @@ namespace ScriptExecutorUI
             if (dialog.ShowDialog() == true && dialog.SelectedPid != 0)
             {
                 _selectedPid = dialog.SelectedPid;
-                SelectedPidTxt.Text = $"PID: {_selectedPid}";
+                SelectedPidTxt.Text = $"PID: {_selectedPid} ";
                 AppendConsole($"Selected PID: {_selectedPid}\n", Colors.Cyan);
             }
         }
@@ -160,7 +183,7 @@ namespace ScriptExecutorUI
                 var robloxProcesses = Process.GetProcessesByName("RobloxPlayerBeta");
                 if (robloxProcesses.Length == 0)
                 {
-                    ConnectionStatusTxt.Text = "No Roblox detected";
+                    ConnectionStatusTxt.Text = "No Roblox detected ";
                     return;
                 }
 
@@ -168,13 +191,13 @@ namespace ScriptExecutorUI
                 if (injected.Count > 0)
                 {
                     _selectedPid = (uint)injected[0].Id;
-                    SelectedPidTxt.Text = $"PID: {_selectedPid}";
-                    ConnectionStatusTxt.Text = $"Connected to: {_selectedPid}";
+                    SelectedPidTxt.Text = $"PID: {_selectedPid} ";
+                    ConnectionStatusTxt.Text = $"Connected to: {_selectedPid} ";
                     AppendConsole($"[Connected] Successful connection to PID {_selectedPid}\n", Colors.LimeGreen);
                 }
                 else
                 {
-                    ConnectionStatusTxt.Text = "Roblox detected (not injected)";
+                    ConnectionStatusTxt.Text = "Roblox detected (not injected) ";
                     AppendConsole("[Info] Roblox detected, waiting for Synapse Z injection.\n", Colors.Orange);
                 }
             }
@@ -227,8 +250,8 @@ namespace ScriptExecutorUI
             Dispatcher.Invoke(() =>
             {
                 _selectedPid = (uint)session.Pid;
-                SelectedPidTxt.Text = $"PID: {_selectedPid}";
-                ConnectionStatusTxt.Text = $"Connected to: {_selectedPid}";
+                SelectedPidTxt.Text = $"PID: {_selectedPid} ";
+                ConnectionStatusTxt.Text = $"Connected to: {_selectedPid} ";
                 AppendConsole($"[Session Added] Menu successful connection to: {session.Pid}\n", Colors.Cyan);
             });
         }
@@ -251,11 +274,11 @@ namespace ScriptExecutorUI
             };
             string label = type switch
             {
-                0 => "[print]",
-                1 => "[info]",
-                2 => "[warn]",
-                3 => "[error]",
-                _ => "[?]"
+                0 => "[print] ",
+                1 => "[info] ",
+                2 => "[warn] ",
+                3 => "[error] ",
+                _ => "[?] "
             };
             Dispatcher.Invoke(() =>
                 AppendConsole($"{label} {output}\n", color));
@@ -291,7 +314,7 @@ namespace ScriptExecutorUI
 
         private void ClearEditor_Click(object sender, RoutedEventArgs e)
         {
-            var confirm = MessageBox.Show("Are you sure you want to clear the editor text?", "Clear editor", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            var confirm = MessageBox.Show("Are you sure you want to clear the editor text? ", "Clear editor ", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (confirm != MessageBoxResult.Yes)
                 return;
             CodeEditor.Clear();
@@ -299,7 +322,7 @@ namespace ScriptExecutorUI
 
         private void ClearConsole_Click(object sender, RoutedEventArgs e)
         {
-            var confirm = MessageBox.Show("Are you sure you want to clear console output?", "Clear console", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            var confirm = MessageBox.Show("Are you sure you want to clear console output? ", "Clear console ", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (confirm != MessageBoxResult.Yes)
                 return;
             ConsoleOutput.Document.Blocks.Clear();
@@ -314,7 +337,7 @@ namespace ScriptExecutorUI
 
         private void FormatEditor_Click(object sender, RoutedEventArgs e)
         {
-            CodeEditor.Text = CodeEditor.Text.Replace("\t", "    ");
+            CodeEditor.Text = CodeEditor.Text.Replace("\t", "     ");
             AppendConsole("[Info] Replaced tabs with spaces.\n", Colors.LightSkyBlue);
         }
 
@@ -333,14 +356,16 @@ namespace ScriptExecutorUI
             }
             return inString;
         }
-
-        private void CodeEditor_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+            
+        private void CodeEditor_TextChanged(object sender, TextChangedEventArgs e)
         {
             UpdateLineNumbers();
             UpdateMiniMap();
+            UpdateCaretPosition();
             UpdatePinnedScope();
             ValidateBasicSyntax();
             UpdateSyntaxHighlighting();
+
 
             if (!_isRealtimeHelperEnabled)
             {
@@ -401,6 +426,9 @@ namespace ScriptExecutorUI
             SuggestionListBox_SelectionChanged(SuggestionListBox, null);
             PositionSuggestionPopup();
             SuggestionPopup.IsOpen = true;
+
+            
+            UpdateCaretPosition();
         }
 
         private void SuggestionListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -439,6 +467,7 @@ namespace ScriptExecutorUI
             CodeEditor.Text = text.Remove(start, caret - start).Insert(start, selected);
             CodeEditor.CaretIndex = start + selected.Length;
             SuggestionPopup.IsOpen = false;
+            UpdateCaretPosition(); 
         }
 
         private void CodeEditor_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -447,8 +476,9 @@ namespace ScriptExecutorUI
             {
                 var caret = CodeEditor.CaretIndex;
                 CodeEditor.Text = CodeEditor.Text.Insert(caret, "()");
-                CodeEditor.CaretIndex = caret + 1;
+                CodeEditor.CaretIndex = caret + 1; 
                 e.Handled = true;
+                UpdateCaretPosition(); 
                 return;
             }
 
@@ -458,15 +488,18 @@ namespace ScriptExecutorUI
                 CodeEditor.Text = CodeEditor.Text.Insert(caret, "\"\"");
                 CodeEditor.CaretIndex = caret + 1;
                 e.Handled = true;
+                UpdateCaretPosition();
             }
         }
 
         private void CodeEditor_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            UpdateCaretPosition();
             if (e.Key == Key.Enter && !SuggestionPopup.IsOpen)
             {
                 HandleAutoIndentEnter();
                 e.Handled = true;
+                UpdateCaretPosition();
                 return;
             }
 
@@ -504,21 +537,64 @@ namespace ScriptExecutorUI
 
         private void UpdateLineNumbers()
         {
-            var lineCount = Math.Max(1, CodeEditor.Text.Split('\n').Length);
-            LineNumbersText.Text = string.Join("\n", Enumerable.Range(1, lineCount));
+            var text = CodeEditor.Text;
+            var lineCount = Math.Max(1, text.Split('\n').Length);
+
+            // Calculate max width needed (e.g., "1000" → 4 digits)
+            int maxDigits = (int)Math.Floor(Math.Log10(lineCount)) + 1;
+            int padding = Math.Max(2, maxDigits); // min 2 chars wide (for "1 ", "10", etc.)
+
+            // Build line numbers 
+            var lines = Enumerable.Range(1, lineCount)
+                .Select(i => i.ToString().PadLeft(padding, ' '))
+                .ToArray();
+
+            LineNumbersText.Text = string.Join("\n", lines);
+
+            // Sync vertical scroll (critical!)
+            if (_editorScrollViewer != null)
+                LineNumbersText.RenderTransform = new TranslateTransform(0, -_editorScrollViewer.VerticalOffset);
         }
 
-        // FIX: Defer overlay scroll viewer lookup so it's ready after layout
+        private void UpdateMiniMapFast()
+        {
+            var text = CodeEditor.Text;
+            if (string.IsNullOrEmpty(text)) { MiniMapPreview.Text = ""; return; }
+
+
+            var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            var sampled = lines.Where((_, i) => i % 2 == 0).Take(25);
+            var preview = string.Join("\n", sampled.Select(l => l.Length > 40 ? l.Substring(0, 40) : l));
+            MiniMapPreview.Text = preview;
+        }
+
         private void CodeEditor_Loaded(object sender, RoutedEventArgs e)
         {
+                
             _editorScrollViewer = FindVisualChild<ScrollViewer>(CodeEditor);
             if (_editorScrollViewer != null)
                 _editorScrollViewer.ScrollChanged += EditorScrollViewer_ScrollChanged;
+               
 
-            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
             {
                 _overlayScrollViewer = FindVisualChild<ScrollViewer>(SyntaxOverlay);
                 UpdateSyntaxHighlighting();
+
+                _caretOverlay = FindName("CaretOverlay") as Rectangle;
+                if (_caretOverlay != null)
+                {
+                    _caretBlinkTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+                    _caretBlinkTimer.Tick += (s, ev) =>
+                    {
+                        _caretOverlay.Visibility = _caretOverlay.Visibility == Visibility.Visible
+                            ? Visibility.Collapsed
+                            : Visibility.Visible;
+                    };
+                    _caretBlinkTimer.Start();
+                }
+
+                UpdateCaretPosition(); 
             }));
         }
 
@@ -550,9 +626,9 @@ namespace ScriptExecutorUI
             UpdatePinnedScope();
             if (SuggestionPopup.IsOpen)
                 PositionSuggestionPopup();
+            UpdateCaretPosition(); 
         }
 
-        // FIX: Use PlacementTarget + RelativePoint for correct popup positioning
         private void PositionSuggestionPopup()
         {
             var caretRect = CodeEditor.GetRectFromCharacterIndex(CodeEditor.CaretIndex, true);
@@ -563,7 +639,6 @@ namespace ScriptExecutorUI
             double x = caretRect.X + 8;
             double y = caretRect.Y + caretRect.Height + 6;
 
-            // Clamp to editor bounds so popup never goes off-screen left/top
             x = Math.Max(12, x);
             y = Math.Max(16, y);
 
@@ -591,7 +666,7 @@ namespace ScriptExecutorUI
                 trimmed.EndsWith("function", StringComparison.OrdinalIgnoreCase) ||
                 trimmed.EndsWith("{", StringComparison.OrdinalIgnoreCase);
 
-            var extraIndent = opensBlock ? "    " : string.Empty;
+            var extraIndent = opensBlock ? "     " : string.Empty;
 
             if (opensBlock)
             {
@@ -650,22 +725,21 @@ namespace ScriptExecutorUI
             for (int i = lines.Length - 1; i >= 0; i--)
             {
                 var line = lines[i].Trim();
-                if (line.StartsWith("function ", StringComparison.OrdinalIgnoreCase))
+                if (line.StartsWith("function", StringComparison.OrdinalIgnoreCase))
                 {
-                    PinnedScopeText.Text = $"Scope: {line}";
+                    PinnedScopeText.Text = $"Scope: {line} ";
                     return;
                 }
-                if (line.StartsWith("local function ", StringComparison.OrdinalIgnoreCase))
+                if (line.StartsWith("local function", StringComparison.OrdinalIgnoreCase))
                 {
-                    PinnedScopeText.Text = $"Scope: {line}";
+                    PinnedScopeText.Text = $"Scope: {line} ";
                     return;
                 }
             }
 
-            PinnedScopeText.Text = "Scope: Global";
+            PinnedScopeText.Text = "Scope: Global ";
         }
 
-        // FIX: Clear existing blocks before building new document to prevent XAML bleed-through
         private void UpdateSyntaxHighlighting()
         {
             var text = CodeEditor.Text ?? string.Empty;
@@ -674,19 +748,30 @@ namespace ScriptExecutorUI
             var doc = new FlowDocument
             {
                 PagePadding = new Thickness(0),
-                TextAlignment = TextAlignment.Left
-                // REMOVED: LineHeight = 15.6[cite: 1]
+                TextAlignment = TextAlignment.Left,
+                PageWidth = 100000.0,   
+                ColumnWidth = 100000.0
             };
 
             var paragraph = new Paragraph
             {
                 Margin = new Thickness(0),
                 Padding = new Thickness(0)
-                // REMOVED: LineHeight = 15.6[cite: 1]
             };
 
-            var keywords = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "function", "local", "if", "then", "else", "elseif", "end", "for", "while", "do", "repeat", "until", "return", "break" };
+            if (string.IsNullOrEmpty(text) || text.Length > 50000)
+            {
+                if (!string.IsNullOrEmpty(text))
+                {
+                    paragraph.Inlines.Add(new Run(text) { Foreground = Brushes.White });
+                }
+                doc.Blocks.Add(paragraph);
+                SyntaxOverlay.Document = doc;
+                return;
+            }
+
+            var keywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    { "function", "local", "if", "then", "else", "elseif", "end", "for", "while", "do", "repeat", "until", "return", "break" };
 
             int i = 0;
             while (i < text.Length)
@@ -773,26 +858,26 @@ namespace ScriptExecutorUI
             }
 
             var starts = text.Split('\n').Count(l =>
-                l.TrimStart().StartsWith("function ", StringComparison.OrdinalIgnoreCase) ||
-                l.TrimStart().StartsWith("if ", StringComparison.OrdinalIgnoreCase) ||
-                l.TrimStart().StartsWith("for ", StringComparison.OrdinalIgnoreCase) ||
-                l.TrimStart().StartsWith("while ", StringComparison.OrdinalIgnoreCase));
+                l.TrimStart().StartsWith("function", StringComparison.OrdinalIgnoreCase) ||
+                l.TrimStart().StartsWith("if", StringComparison.OrdinalIgnoreCase) ||
+                l.TrimStart().StartsWith("for", StringComparison.OrdinalIgnoreCase) ||
+                l.TrimStart().StartsWith("while", StringComparison.OrdinalIgnoreCase));
 
             var ends = text.Split('\n').Count(l => l.Trim().Equals("end", StringComparison.OrdinalIgnoreCase));
 
             if (paren < 0 || brace < 0)
             {
-                SyntaxStatusText.Text = "Syntax status: Unexpected closing bracket.";
+                SyntaxStatusText.Text = "Syntax status: Unexpected closing bracket. ";
                 SyntaxStatusText.Foreground = Brushes.OrangeRed;
             }
             else if (paren > 0 || brace > 0 || ends < starts)
             {
-                SyntaxStatusText.Text = "Syntax status: Possibly missing closing token.";
+                SyntaxStatusText.Text = "Syntax status: Possibly missing closing token. ";
                 SyntaxStatusText.Foreground = Brushes.Orange;
             }
             else
             {
-                SyntaxStatusText.Text = "Syntax status: Looks valid.";
+                SyntaxStatusText.Text = "Syntax status: Looks valid. ";
                 SyntaxStatusText.Foreground = Brushes.LightGreen;
             }
         }
@@ -853,7 +938,31 @@ namespace ScriptExecutorUI
                     break;
             }
         }
+        private void UpdateCaretPosition()
+        {
+            if (_caretOverlay == null || !CodeEditor.IsFocused) return;
 
+            try
+            {
+                var rect = CodeEditor.GetRectFromCharacterIndex(CodeEditor.CaretIndex, false);
+                if (rect.IsEmpty) return;
+
+                var grid = CodeEditor.Parent as Grid;
+                if (grid == null) return;
+
+                var point = CodeEditor.TranslatePoint(new Point(rect.Left, rect.Top), grid);
+
+                // Consolas 13pt has ~1px right-side bearing — 1.8px is perfect
+                double offsetX = 1.8;
+                double lineHeight = 15.6;
+                double caretTop = point.Y + (lineHeight - rect.Height) / 2;
+
+                _caretOverlay.Margin = new Thickness(point.X + offsetX, caretTop, 0, 0);
+                _caretOverlay.Height = lineHeight;
+                _caretOverlay.Visibility = Visibility.Visible;
+            }
+            catch { }
+        }
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ButtonState == MouseButtonState.Pressed)
