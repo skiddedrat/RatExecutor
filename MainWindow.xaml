@@ -307,6 +307,11 @@
                         <StackPanel Margin="16">
                             <TextBlock Text="Theme Presets" Foreground="#E6E6FF" FontSize="18" FontWeight="Bold"/>
                             <TextBlock Text="Pick a color style for the whole menu accent." Foreground="#9AA4C5" Margin="0,6,0,14"/>
+                            <CheckBox x:Name="RealtimeHelperToggle" Content="Enable realtime code helper"
+                                      Foreground="#DDE9FF" IsChecked="True" Margin="0,0,0,10"
+                                      Checked="RealtimeHelperToggle_Changed" Unchecked="RealtimeHelperToggle_Changed"/>
+                            <TextBlock x:Name="SyntaxStatusText" Text="Syntax status: Ready"
+                                       Foreground="#9CD9A7" FontSize="11" Margin="0,0,0,12"/>
                             <WrapPanel>
                                 <Button Content="Default" Tag="Default" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
                                 <Button Content="Ocean" Tag="Ocean" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>

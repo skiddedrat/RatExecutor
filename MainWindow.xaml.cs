@@ -27,6 +27,7 @@ namespace ScriptExecutorUI
         private uint _selectedPid = 0;
         private CancellationTokenSource _cts = null;
         private ScrollViewer _editorScrollViewer;
+        private bool _isRealtimeHelperEnabled = true;
         private readonly SuggestionItem[] _suncSuggestions =
         {
             new SuggestionItem { Name = "print()", Description = "Output text/value to console." },
@@ -305,6 +306,12 @@ namespace ScriptExecutorUI
         private void CodeEditor_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             UpdateLineNumbers();
+            ValidateBasicSyntax();
+            if (!_isRealtimeHelperEnabled)
+            {
+                SuggestionPopup.Visibility = Visibility.Collapsed;
+                return;
+            }
             var caret = CodeEditor.CaretIndex;
             var text = CodeEditor.Text;
             var start = caret - 1;
@@ -432,7 +439,7 @@ namespace ScriptExecutorUI
 
         private void UpdateLineNumbers()
         {
-            var lineCount = Math.Max(1, CodeEditor.LineCount);
+            var lineCount = Math.Max(1, CodeEditor.Text.Split('\n').Length);
             LineNumbersText.Text = string.Join("\n", Enumerable.Range(1, lineCount));
         }
 
@@ -507,6 +514,50 @@ namespace ScriptExecutorUI
 
             CodeEditor.Text = text.Insert(caret, insert);
             CodeEditor.CaretIndex = caret + insert.Length;
+        }
+
+        private void RealtimeHelperToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            _isRealtimeHelperEnabled = RealtimeHelperToggle.IsChecked == true;
+            if (!_isRealtimeHelperEnabled)
+            {
+                SuggestionPopup.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void ValidateBasicSyntax()
+        {
+            var text = CodeEditor.Text;
+            int paren = 0, brace = 0;
+            foreach (var c in text)
+            {
+                if (c == '(') paren++;
+                else if (c == ')') paren--;
+                else if (c == '{') brace++;
+                else if (c == '}') brace--;
+            }
+
+            var starts = text.Split('\n').Count(l => l.TrimStart().StartsWith("function ", StringComparison.OrdinalIgnoreCase)
+                                                   || l.TrimStart().StartsWith("if ", StringComparison.OrdinalIgnoreCase)
+                                                   || l.TrimStart().StartsWith("for ", StringComparison.OrdinalIgnoreCase)
+                                                   || l.TrimStart().StartsWith("while ", StringComparison.OrdinalIgnoreCase));
+            var ends = text.Split('\n').Count(l => l.Trim().Equals("end", StringComparison.OrdinalIgnoreCase));
+
+            if (paren < 0 || brace < 0)
+            {
+                SyntaxStatusText.Text = "Syntax status: Unexpected closing bracket.";
+                SyntaxStatusText.Foreground = Brushes.OrangeRed;
+            }
+            else if (paren > 0 || brace > 0 || ends < starts)
+            {
+                SyntaxStatusText.Text = "Syntax status: Possibly missing closing token.";
+                SyntaxStatusText.Foreground = Brushes.Orange;
+            }
+            else
+            {
+                SyntaxStatusText.Text = "Syntax status: Looks valid.";
+                SyntaxStatusText.Foreground = Brushes.LightGreen;
+            }
         }
 
         private void SettingsTab_Click(object sender, RoutedEventArgs e)
