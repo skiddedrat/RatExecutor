@@ -605,14 +605,21 @@ namespace ScriptExecutorUI
                 trimmed.EndsWith("then", StringComparison.OrdinalIgnoreCase) ||
                 trimmed.EndsWith("do", StringComparison.OrdinalIgnoreCase) ||
                 trimmed.EndsWith("function", StringComparison.OrdinalIgnoreCase) ||
-                trimmed.EndsWith("repeat", StringComparison.OrdinalIgnoreCase) ||
                 trimmed.EndsWith("{", StringComparison.OrdinalIgnoreCase);
 
             var extraIndent = opensBlock ? "    " : string.Empty;
-            var insert = "\n" + currentIndent + extraIndent;
 
-            CodeEditor.Text = text.Insert(caret, insert);
-            CodeEditor.CaretIndex = caret + insert.Length;
+            if (opensBlock)
+            {
+                var insert = "\n" + currentIndent + extraIndent + "\n" + currentIndent + "end";
+                CodeEditor.Text = text.Insert(caret, insert);
+                CodeEditor.CaretIndex = caret + ("\n" + currentIndent + extraIndent).Length;
+                return;
+            }
+
+            var singleLineInsert = "\n" + currentIndent;
+            CodeEditor.Text = text.Insert(caret, singleLineInsert);
+            CodeEditor.CaretIndex = caret + singleLineInsert.Length;
         }
 
         private void RealtimeHelperToggle_Changed(object sender, RoutedEventArgs e)
