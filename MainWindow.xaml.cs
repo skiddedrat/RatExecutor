@@ -709,19 +709,18 @@ namespace ScriptExecutorUI
                 if (c == '-' && i + 1 < text.Length && text[i + 1] == '-')
                 {
                     int start = i;
-                    while (i < text.Length && text[i] != '
-') i++;
+                    while (i < text.Length && text[i] != '\n') i++;
                     paragraph.Inlines.Add(new Run(text.Substring(start, i - start)) { Foreground = Brushes.Gray });
                     continue;
                 }
 
-                if (c == '"' || c == ''')
+                if (c == '"' || c == '\'')
                 {
                     char q = c; int start = i++; bool esc = false;
                     while (i < text.Length)
                     {
                         if (esc) { esc = false; i++; continue; }
-                        if (text[i] == '\') { esc = true; i++; continue; }
+                        if (text[i] == '\\') { esc = true; i++; continue; }
                         if (text[i] == q) { i++; break; }
                         i++;
                     }
