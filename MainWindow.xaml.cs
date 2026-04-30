@@ -11,6 +11,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Controls.Primitives;
+using System.Windows.Navigation;
 
 namespace ScriptExecutorUI
 {
@@ -18,8 +19,10 @@ namespace ScriptExecutorUI
     {
         private sealed class SuggestionItem
         {
-            public string Name { get; init; }
-            public string Description { get; init; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+            public string Signature { get; set; }
+            public string DocumentationUrl { get; set; }
             public override string ToString() => Name;
         }
 
@@ -30,15 +33,15 @@ namespace ScriptExecutorUI
         private bool _isRealtimeHelperEnabled = true;
         private readonly SuggestionItem[] _suncSuggestions =
         {
-            new SuggestionItem { Name = "print()", Description = "Output text/value to console." },
+            new SuggestionItem { Name = "print", Signature = "print(...: T...) : ()", Description = "Prints all provided values to the output.", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#print" },
             new SuggestionItem { Name = "warn()", Description = "Output warning message." },
             new SuggestionItem { Name = "error()", Description = "Throw an error and stop execution." },
             new SuggestionItem { Name = "task.wait()", Description = "Yield current thread for duration." },
             new SuggestionItem { Name = "task.spawn()", Description = "Run function asynchronously." },
             new SuggestionItem { Name = "task.delay()", Description = "Run function after delay." },
-            new SuggestionItem { Name = "pairs()", Description = "Iterate key/value table pairs." },
+            new SuggestionItem { Name = "pairs", Signature = "pairs(t: table) : (function, table, any)", Description = "Iterate key/value table pairs.", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#pairs" },
             new SuggestionItem { Name = "ipairs()", Description = "Iterate array-like table values." },
-            new SuggestionItem { Name = "pcall()", Description = "Call function in protected mode." },
+            new SuggestionItem { Name = "pcall", Signature = "pcall(f: function, ...: any) : (boolean, ...any)", Description = "Call function in protected mode.", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#pcall" },
             new SuggestionItem { Name = "xpcall()", Description = "Protected call with custom handler." },
             new SuggestionItem { Name = "game:GetService(\"Players\")", Description = "Get Players service." },
             new SuggestionItem { Name = "game:GetService(\"RunService\")", Description = "Get RunService." },
@@ -128,6 +131,29 @@ namespace ScriptExecutorUI
                 AppendConsole($"Selected PID: {_selectedPid}\n", Colors.Cyan);
             }
         }
+
+        private void LaunchRoblox_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "roblox://",
+                    UseShellExecute = true
+                });
+                AppendConsole("[Info] Launching Roblox...\n", Colors.LightSkyBlue);
+            }
+            catch (Exception ex)
+            {
+                AppendConsole($"[Warn] Could not launch Roblox protocol: {ex.Message}. Opening Roblox website instead.\n", Colors.Orange);
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://www.roblox.com/home",
+                    UseShellExecute = true
+                });
+            }
+        }
+
         private void DetectRobloxAndConnection()
         {
             try
@@ -348,8 +374,17 @@ namespace ScriptExecutorUI
                 return;
             }
 
+                        foreach (var match in matches)
+            {
+                if (string.IsNullOrWhiteSpace(match.Signature))
+                    match.Signature = match.Name;
+                if (string.IsNullOrWhiteSpace(match.DocumentationUrl))
+                    match.DocumentationUrl = "https://create.roblox.com/docs";
+            }
+
             SuggestionListBox.ItemsSource = matches;
             SuggestionListBox.SelectedIndex = 0;
+            SuggestionListBox_SelectionChanged(SuggestionListBox, null);
             PositionSuggestionPopup();
             SuggestionPopup.Visibility = Visibility.Visible;
         }
@@ -360,6 +395,28 @@ namespace ScriptExecutorUI
             {
                 InsertSuggestion(selected.Name);
             }
+        }
+
+        private void SuggestionListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (SuggestionListBox.SelectedItem is not SuggestionItem selected)
+                return;
+
+            SuggestionSignatureText.Text = selected.Signature ?? selected.Name;
+            SuggestionDescriptionText.Text = selected.Description ?? string.Empty;
+            SuggestionDocsLink.Tag = selected.DocumentationUrl;
+        }
+
+        private void SuggestionDocsLink_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (SuggestionDocsLink.Tag is not string url || string.IsNullOrWhiteSpace(url))
+                return;
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
         }
 
         private void InsertSuggestion(string selected)
