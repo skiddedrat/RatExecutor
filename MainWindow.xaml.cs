@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Controls.Primitives;
 
 namespace ScriptExecutorUI
 {
@@ -259,7 +260,11 @@ namespace ScriptExecutorUI
                 return;
             }
 
-            var matches = _suncSuggestions.Where(x => x.StartsWith(token, StringComparison.OrdinalIgnoreCase)).Take(8).ToList();
+            var matches = _suncSuggestions
+                .Where(x => x.StartsWith(token, StringComparison.OrdinalIgnoreCase) || x.Contains(token, StringComparison.OrdinalIgnoreCase))
+                .Distinct()
+                .Take(10)
+                .ToList();
             if (matches.Count == 0)
             {
                 SuggestionPopup.Visibility = Visibility.Collapsed;
@@ -268,6 +273,7 @@ namespace ScriptExecutorUI
 
             SuggestionListBox.ItemsSource = matches;
             SuggestionListBox.SelectedIndex = 0;
+            PositionSuggestionPopup();
             SuggestionPopup.Visibility = Visibility.Visible;
         }
 
@@ -367,6 +373,25 @@ namespace ScriptExecutorUI
         {
             var lineCount = Math.Max(1, CodeEditor.LineCount);
             LineNumbersText.Text = string.Join("\n", Enumerable.Range(1, lineCount));
+        }
+
+        private void CodeEditor_SelectionChanged(object sender, RoutedEventArgs e)
+        {
+            if (SuggestionPopup.IsVisible)
+            {
+                PositionSuggestionPopup();
+            }
+        }
+
+        private void PositionSuggestionPopup()
+        {
+            var caretRect = CodeEditor.GetRectFromCharacterIndex(CodeEditor.CaretIndex, true);
+            if (caretRect.IsEmpty)
+                return;
+
+            SuggestionPopup.Placement = PlacementMode.Relative;
+            SuggestionPopup.HorizontalOffset = Math.Max(12, caretRect.X + 8);
+            SuggestionPopup.VerticalOffset = Math.Max(16, caretRect.Y + caretRect.Height + 6);
         }
 
         private void SettingsTab_Click(object sender, RoutedEventArgs e)
