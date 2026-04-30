@@ -180,6 +180,11 @@
                                 <TextBlock x:Name="SelectedPidTxt" Text="No PID" Margin="6,0,0,0" FontSize="11"/>
                             </StackPanel>
                         </Button>
+                        <Border Background="#1E2620" BorderBrush="#00AA66" BorderThickness="1"
+                                CornerRadius="5" Margin="10,0,0,0" Padding="8,3">
+                            <TextBlock x:Name="ConnectionStatusTxt" Text="Waiting for Roblox..."
+                                       Foreground="#8AF5C6" FontSize="11"/>
+                        </Border>
                     </StackPanel>
 
                     <TextBox x:Name="CodeEditor" Grid.Row="1"
@@ -190,7 +195,16 @@
                              VerticalScrollBarVisibility="Auto"
                              TextWrapping="NoWrap"
                              Padding="15,10"
+                             TextChanged="CodeEditor_TextChanged"
+                             PreviewTextInput="CodeEditor_PreviewTextInput"
                              Visibility="Visible"/>
+                    <Border x:Name="SuggestionPopup" Grid.Row="1" Background="#1C1C1C" BorderBrush="#444"
+                            BorderThickness="1" CornerRadius="6" Width="240" HorizontalAlignment="Left"
+                            VerticalAlignment="Top" Margin="24,18,0,0" Visibility="Collapsed">
+                        <ListBox x:Name="SuggestionListBox" Background="Transparent" BorderThickness="0"
+                                 Foreground="#D8D8D8" FontFamily="Consolas" FontSize="12"
+                                 MouseDoubleClick="SuggestionListBox_MouseDoubleClick"/>
+                    </Border>
 
                     <RichTextBox x:Name="ConsoleOutput" Grid.Row="1"
                                  Background="#121212" Foreground="#E0E0E0"

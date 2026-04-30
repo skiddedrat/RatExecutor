@@ -3,6 +3,7 @@ using SynapseZ;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Documents;
@@ -16,6 +17,15 @@ namespace ScriptExecutorUI
         public ObservableCollection<AccordionSection> Sections { get; set; } = new ObservableCollection<AccordionSection>();
         private uint _selectedPid = 0;
         private CancellationTokenSource _cts = null;
+        private readonly string[] _suncSuggestions =
+        {
+            "print", "warn", "error", "getgenv", "getrenv", "getgc", "getinstances",
+            "getnilinstances", "getconnections", "hookfunction", "hookmetamethod",
+            "newcclosure", "checkcaller", "loadstring", "getsenv", "getloadedmodules",
+            "getrunningscripts", "getscriptbytecode", "debug.getinfo", "debug.getupvalues",
+            "debug.getconstants", "setthreadidentity", "getthreadidentity", "setclipboard",
+            "rconsoleshow", "rconsoleprint", "rconsolewarn", "rconsoleerr", "WebSocket.connect"
+        };
 
         public MainWindow()
         {
@@ -30,6 +40,7 @@ namespace ScriptExecutorUI
             SynapseZAPI2.SessionAdded += OnSessionAdded;
             SynapseZAPI2.SessionRemoved += OnSessionRemoved;
             SynapseZAPI2.SessionOutput += OnSessionOutput;
+            DetectRobloxAndConnection();
         }
 
         private void LoadAccordionData()
@@ -62,6 +73,36 @@ namespace ScriptExecutorUI
                 _selectedPid = dialog.SelectedPid;
                 SelectedPidTxt.Text = $"PID: {_selectedPid}";
                 AppendConsole($"Selected PID: {_selectedPid}\n", Colors.Cyan);
+            }
+        }
+        private void DetectRobloxAndConnection()
+        {
+            try
+            {
+                var robloxProcesses = Process.GetProcessesByName("RobloxPlayerBeta");
+                if (robloxProcesses.Length == 0)
+                {
+                    ConnectionStatusTxt.Text = "No Roblox detected";
+                    return;
+                }
+
+                var injected = SynapseZAPI.GetSynzRobloxInstances();
+                if (injected.Count > 0)
+                {
+                    _selectedPid = (uint)injected[0].Id;
+                    SelectedPidTxt.Text = $"PID: {_selectedPid}";
+                    ConnectionStatusTxt.Text = $"Connected to: {_selectedPid}";
+                    AppendConsole($"[Connected] Successful connection to PID {_selectedPid}\n", Colors.LimeGreen);
+                }
+                else
+                {
+                    ConnectionStatusTxt.Text = "Roblox detected (not injected)";
+                    AppendConsole("[Info] Roblox detected, waiting for Synapse Z injection.\n", Colors.Orange);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendConsole($"[Warn] Detection failed: {ex.Message}\n", Colors.Orange);
             }
         }
 
@@ -105,7 +146,12 @@ namespace ScriptExecutorUI
         private void OnSessionAdded(SynapseZAPI2.SynapseSession session)
         {
             Dispatcher.Invoke(() =>
-                AppendConsole($"[Session Added] PID: {session.Pid}\n", Colors.Cyan));
+            {
+                _selectedPid = (uint)session.Pid;
+                SelectedPidTxt.Text = $"PID: {_selectedPid}";
+                ConnectionStatusTxt.Text = $"Connected to: {_selectedPid}";
+                AppendConsole($"[Session Added] Menu successful connection to: {session.Pid}\n", Colors.Cyan);
+            });
         }
 
         private void OnSessionRemoved(SynapseZAPI2.SynapseSession session)
@@ -159,6 +205,85 @@ namespace ScriptExecutorUI
         private void ClearEditor_Click(object sender, RoutedEventArgs e)
         {
             CodeEditor.Clear();
+        }
+
+        private void CodeEditor_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            var caret = CodeEditor.CaretIndex;
+            var text = CodeEditor.Text;
+            var start = caret - 1;
+            while (start >= 0 && (char.IsLetterOrDigit(text[start]) || text[start] == '.' || text[start] == '_'))
+            {
+                start--;
+            }
+
+            start++;
+            if (start >= caret || start < 0 || caret > text.Length)
+            {
+                SuggestionPopup.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var token = text.Substring(start, caret - start);
+            if (token.Length < 2)
+            {
+                SuggestionPopup.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var matches = _suncSuggestions.Where(x => x.StartsWith(token, StringComparison.OrdinalIgnoreCase)).Take(8).ToList();
+            if (matches.Count == 0)
+            {
+                SuggestionPopup.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            SuggestionListBox.ItemsSource = matches;
+            SuggestionPopup.Visibility = Visibility.Visible;
+        }
+
+        private void SuggestionListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (SuggestionListBox.SelectedItem is string selected)
+            {
+                InsertSuggestion(selected);
+            }
+        }
+
+        private void InsertSuggestion(string selected)
+        {
+            var caret = CodeEditor.CaretIndex;
+            var text = CodeEditor.Text;
+            var start = caret - 1;
+            while (start >= 0 && (char.IsLetterOrDigit(text[start]) || text[start] == '.' || text[start] == '_'))
+            {
+                start--;
+            }
+            start++;
+
+            CodeEditor.Text = text.Remove(start, caret - start).Insert(start, selected);
+            CodeEditor.CaretIndex = start + selected.Length;
+            SuggestionPopup.Visibility = Visibility.Collapsed;
+        }
+
+        private void CodeEditor_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (e.Text == "(")
+            {
+                var caret = CodeEditor.CaretIndex;
+                CodeEditor.Text = CodeEditor.Text.Insert(caret, "()");
+                CodeEditor.CaretIndex = caret + 1;
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Text == "\"")
+            {
+                var caret = CodeEditor.CaretIndex;
+                CodeEditor.Text = CodeEditor.Text.Insert(caret, "\"\"");
+                CodeEditor.CaretIndex = caret + 1;
+                e.Handled = true;
+            }
         }
 
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
