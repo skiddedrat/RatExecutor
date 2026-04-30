@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:fa="clr-namespace:FontAwesome.Sharp;assembly=FontAwesome.Sharp"
         xmlns:local="clr-namespace:ScriptExecutorUI"
-        Title="Script Executor" Height="700" Width="960"
+        Title="Script Executor" Height="760" Width="1160"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="CanResizeWithGrip"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
@@ -11,10 +11,10 @@
     <Window.Resources>
         <local:BoolToVisibilityConverter x:Key="BoolToVis"/>
 
-        <SolidColorBrush x:Key="DeepDark" Color="#0F0F0F"/>
+        <SolidColorBrush x:Key="DeepDark" Color="#090B14"/>
         <SolidColorBrush x:Key="NeonPurple" Color="#A020F0"/>
-        <SolidColorBrush x:Key="SoftWhite" Color="#E0E0E0"/>
-        <SolidColorBrush x:Key="AccentGreen" Color="#00FF7F"/>
+        <SolidColorBrush x:Key="SoftWhite" Color="#F2F4FF"/>
+        <SolidColorBrush x:Key="AccentGreen" Color="#63FFD2"/>
         <LinearGradientBrush x:Key="EditorAnimatedBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#101020" Offset="0.0"/>
             <GradientStop Color="#14142A" Offset="0.45"/>
@@ -135,24 +135,25 @@
     </Window.Resources>
 
     <Grid>
-        <Border x:Name="MainBorder" Margin="10" Background="{StaticResource DeepDark}"
-                CornerRadius="10" BorderBrush="#2A2A2A" BorderThickness="1">
+        <Rectangle Fill="#06070D"/>
+        <Border x:Name="MainBorder" Margin="24" Background="#C4101222"
+                CornerRadius="22" BorderBrush="#55456B96" BorderThickness="1.3">
             <Border.Effect>
                 <DropShadowEffect Color="#A020F0" ShadowDepth="0" BlurRadius="18"/>
             </Border.Effect>
 
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="220"/>
+                    <ColumnDefinition Width="280"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- LEFT SIDEBAR -->
-                <Border Grid.Column="0" Background="#1A1A1A" CornerRadius="10,0,0,10" Padding="10">
+                <Border Grid.Column="0" Background="#AA0E1322" CornerRadius="22,0,0,22" Padding="18">
                     <StackPanel Margin="0,15,0,0">
-                        <TextBlock Text="EXECUTOR" FontSize="20" FontWeight="Bold"
-                                   Foreground="{StaticResource NeonPurple}" Margin="10,0,0,15"/>
+                        <TextBlock Text="RAT EXECUTOR" FontSize="24" FontWeight="Bold"
+                                   Foreground="{StaticResource NeonPurple}" Margin="4,0,0,4"/>
                         <ItemsControl x:Name="AccordionItems">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -190,7 +191,8 @@
                     </Grid.RowDefinitions>
 
                     <!-- Tab Header -->
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,10,0,0">
+                    <Border Grid.Row="0" Margin="10,12,10,6" Background="#6617223A" CornerRadius="14" Padding="8,6">
+                    <StackPanel Orientation="Horizontal">
                         <Button x:Name="EditorTabBtn" Content="Editor" Width="80" Height="28"
                                 Style="{StaticResource GlowButtonStyle}" Background="#2A2340" Foreground="{StaticResource SoftWhite}"
                                 FontWeight="SemiBold" Cursor="Hand"
@@ -211,6 +213,7 @@
                         <TextBlock x:Name="ConnectionStatusTxt" Text="Disconnected"
                                    Foreground="#888" FontSize="11" Margin="15,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
+                    </Border>
 
                     <!-- Autocomplete Popup (floating above editor) -->
                     <Popup x:Name="SuggestionPopup" Grid.Row="1"
@@ -287,8 +290,8 @@
                                  Visibility="Collapsed"/>
 
                     <!-- Floating action bar -->
-                    <Border Grid.Row="2" Background="#AA1A1A1A"
-                            CornerRadius="8" Padding="8,4"
+                    <Border Grid.Row="2" Background="#CC101522"
+                            CornerRadius="16" Padding="10,6"
                             HorizontalAlignment="Center" VerticalAlignment="Bottom"
                             Margin="0,0,0,12" MaxWidth="300">
                         <Border.Effect>
