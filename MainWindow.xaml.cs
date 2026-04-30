@@ -1,8 +1,11 @@
 #nullable disable
 using SynapseZ;
+using Microsoft.Win32;
+using IOPath = System.IO.Path;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows;
@@ -28,6 +31,11 @@ namespace ScriptExecutorUI
             public string DocumentationUrl { get; set; }
             public override string ToString() => Name;
         }
+        private sealed class EditorTabState
+        {
+            public string Title { get; set; }
+            public string Content { get; set; } = string.Empty;
+        }
 
         public ObservableCollection<AccordionSection> Sections { get; set; } = new ObservableCollection<AccordionSection>();
         private uint _selectedPid = 0;
@@ -40,6 +48,11 @@ namespace ScriptExecutorUI
         private string _lastText = "";
         private int _lastCaretIndex = 0;
         private readonly object _syncLock = new object();
+        private readonly ObservableCollection<EditorTabState> _editorTabs = new ObservableCollection<EditorTabState>();
+        private readonly ObservableCollection<string> _savedFiles = new ObservableCollection<string>();
+        private EditorTabState _activeEditorTab;
+        private bool _isSwitchingTabs;
+        private const int MaxEditorTabs = 100;
 
         private double MeasureSpaceWidth()
         {
@@ -119,17 +132,144 @@ namespace ScriptExecutorUI
             SynapseZAPI2.SessionRemoved += OnSessionRemoved;
             SynapseZAPI2.SessionOutput += OnSessionOutput;
             DetectRobloxAndConnection();
+            InitializeEditorTabs();
+            SavedFilesList.ItemsSource = _savedFiles;
+        }
+
+        private void InitializeEditorTabs()
+        {
+            EditorTabsList.ItemsSource = _editorTabs;
+            AddNewEditorTab();
+        }
+
+        private void AddEditorTab_Click(object sender, RoutedEventArgs e) => AddNewEditorTab();
+
+        private void AddNewEditorTab()
+        {
+            if (_editorTabs.Count >= MaxEditorTabs)
+            {
+                AppendConsole("[Warn] Maximum of 100 tabs reached.\n", Colors.Orange);
+                return;
+            }
+
+            PersistActiveEditorTab();
+            var tab = new EditorTabState { Title = $"Untitled-{_editorTabs.Count + 1}" };
+            _editorTabs.Add(tab);
+            ActivateEditorTab(tab);
+        }
+
+        private void EditorTabItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is EditorTabState tab)
+                ActivateEditorTab(tab);
+        }
+
+        private void CloseEditorTab_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.Tag is not EditorTabState tab)
+                return;
+            if (_editorTabs.Count <= 1)
+            {
+                AppendConsole("[Warn] Keep at least one tab open.\n", Colors.Orange);
+                return;
+            }
+
+            var closingActive = ReferenceEquals(_activeEditorTab, tab);
+            var index = _editorTabs.IndexOf(tab);
+            _editorTabs.Remove(tab);
+            if (closingActive)
+            {
+                var nextIndex = Math.Max(0, Math.Min(index, _editorTabs.Count - 1));
+                ActivateEditorTab(_editorTabs[nextIndex]);
+            }
+            UpdateEditorTabSlider();
+        }
+
+        private void ActivateEditorTab(EditorTabState tab)
+        {
+            PersistActiveEditorTab();
+            _activeEditorTab = tab;
+            _isSwitchingTabs = true;
+            CodeEditor.Text = tab.Content ?? string.Empty;
+            _isSwitchingTabs = false;
+            CodeEditor.CaretIndex = CodeEditor.Text.Length;
+            UpdateEditorTabSlider();
+        }
+
+        private void PersistActiveEditorTab()
+        {
+            if (_activeEditorTab != null)
+                _activeEditorTab.Content = CodeEditor.Text ?? string.Empty;
+        }
+
+        private void UpdateEditorTabSlider()
+        {
+            if (EditorTabsScrollViewer == null || EditorTabsSlider == null)
+                return;
+            var max = Math.Max(0, EditorTabsScrollViewer.ExtentWidth - EditorTabsScrollViewer.ViewportWidth);
+            EditorTabsSlider.Maximum = max;
+            if (EditorTabsSlider.Value > max)
+                EditorTabsSlider.Value = max;
+        }
+
+        private void EditorTabsSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            EditorTabsScrollViewer?.ScrollToHorizontalOffset(e.NewValue);
+        }
+
+        private void EditorTabsScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            UpdateEditorTabSlider();
+            if (EditorTabsSlider != null && Math.Abs(EditorTabsSlider.Value - e.HorizontalOffset) > 0.5)
+                EditorTabsSlider.Value = e.HorizontalOffset;
         }
 
         private void LoadAccordionData()
         {
-            Sections = new ObservableCollection<AccordionSection>
+            Sections = new ObservableCollection<AccordionSection>();
+        }
+
+        private void ImportScriptFiles_Click(object sender, RoutedEventArgs e)
+        {
+            var picker = new OpenFileDialog
             {
-                new AccordionSection { Name = "Tabs ", Items = { "Main.lua ", "AutoFarm.lua ", "ESP.lua " } },
-                new AccordionSection { Name = "Saved Scripts ", Items = { "Universal.lua ", "Dex.lua ", "DarkHub.lua " } },
-                new AccordionSection { Name = "Auto-execute ", Items = { "On attach ", "On injection ", "Custom event " } }
+                Multiselect = true,
+                Filter = "Script/Text Files (*.lua;*.txt)|*.lua;*.txt"
             };
-            AccordionItems.ItemsSource = Sections;
+
+            if (picker.ShowDialog() != true)
+                return;
+
+            foreach (var file in picker.FileNames.Where(File.Exists))
+            {
+                if (!_savedFiles.Contains(file))
+                    _savedFiles.Add(file);
+            }
+        }
+
+        private void SavedFilesList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (SavedFilesList.SelectedItem is not string filePath || !File.Exists(filePath))
+                return;
+
+            var result = MessageBox.Show($"Open file '{IOPath.GetFileName(filePath)}' in a new tab? ", "Open saved file ", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes)
+                return;
+
+            if (_editorTabs.Count >= MaxEditorTabs)
+            {
+                AppendConsole("[Warn] Maximum of 100 tabs reached.\n", Colors.Orange);
+                return;
+            }
+
+            PersistActiveEditorTab();
+            var tab = new EditorTabState
+            {
+                Title = IOPath.GetFileName(filePath),
+                Content = File.ReadAllText(filePath)
+            };
+            _editorTabs.Add(tab);
+            ActivateEditorTab(tab);
         }
 
         private void ApplyStaticGlowEffects()
@@ -359,6 +499,8 @@ namespace ScriptExecutorUI
             
         private void CodeEditor_TextChanged(object sender, TextChangedEventArgs e)
         {
+            if (!_isSwitchingTabs && _activeEditorTab != null)
+                _activeEditorTab.Content = CodeEditor.Text ?? string.Empty;
             UpdateLineNumbers();
             UpdateMiniMap();
             UpdateCaretPosition();
@@ -681,11 +823,40 @@ namespace ScriptExecutorUI
             CodeEditor.CaretIndex = caret + singleLineInsert.Length;
         }
 
-        private void RealtimeHelperToggle_Changed(object sender, RoutedEventArgs e)
+        private void GeneralAction_Click(object sender, RoutedEventArgs e)
         {
-            _isRealtimeHelperEnabled = RealtimeHelperToggle.IsChecked == true;
-            if (!_isRealtimeHelperEnabled)
-                SuggestionPopup.IsOpen = false;
+            if (sender is not Button b || b.Tag is not string action)
+                return;
+            switch (action)
+            {
+                case "reset-state":
+                    CodeEditor.Clear();
+                    ConsoleOutput.Document.Blocks.Clear();
+                    AppendConsole("[Info] State reset.\n", Colors.LightSkyBlue);
+                    break;
+                case "reset-hwid":
+                    AppendConsole("[Info] HWID reset requested (Synapse side).\n", Colors.LightSkyBlue);
+                    break;
+                case "create-shortcuts":
+                    Directory.CreateDirectory("autoexec");
+                    Directory.CreateDirectory("workspace");
+                    AppendConsole("[Info] Created autoexec/workspace folders.\n", Colors.LightSkyBlue);
+                    break;
+                case "toggle-topmost":
+                    Topmost = !Topmost;
+                    TopmostBtn.Content = Topmost ? "Disable" : "Enable";
+                    AppendConsole($"[Info] Topmost: {Topmost}\n", Colors.LightSkyBlue);
+                    break;
+                case "open-ui-folder":
+                    Process.Start(new ProcessStartInfo { FileName = Directory.GetCurrentDirectory(), UseShellExecute = true });
+                    break;
+                case "open-synz-folder":
+                    var synzFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Synapse Z");
+                    if (!Directory.Exists(synzFolder))
+                        Directory.CreateDirectory(synzFolder);
+                    Process.Start(new ProcessStartInfo { FileName = synzFolder, UseShellExecute = true });
+                    break;
+            }
         }
 
         private void UpdateMiniMap()

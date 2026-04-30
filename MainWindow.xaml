@@ -296,32 +296,13 @@
                 <!-- LEFT SIDEBAR -->
                 <Border Grid.Column="0" Margin="0,10,8,10" Background="#D0080B17" CornerRadius="18" Padding="18" BorderBrush="#553A3F65" BorderThickness="1.2">
                     <StackPanel Margin="0,15,0,0">
-                        <TextBlock Text="Abyss Reborn" FontSize="24" FontWeight="Bold"
-                                   Foreground="{StaticResource NeonPurple}" Margin="4,0,0,4"/>
-                        <ItemsControl x:Name="AccordionItems">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Margin="0,0,0,8">
-                                        <ToggleButton Content="{Binding Name}"
-                                                      Style="{StaticResource AccordionHeaderStyle}"
-                                                      IsChecked="{Binding IsExpanded, Mode=TwoWay}"
-                                                      Cursor="Hand"/>
-                                        <ContentControl Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVis}}"
-                                                        Margin="20,5,0,0">
-                                            <ItemsControl ItemsSource="{Binding Items}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding}"
-                                                                   Foreground="#C0C0C0" Margin="0,4"
-                                                                   FontSize="12" Cursor="Hand"/>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </ContentControl>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <TextBlock Text="Abyss Reborn" FontSize="24" FontWeight="Bold" Foreground="{StaticResource NeonPurple}" Margin="4,0,0,4"/>
+                        <TextBlock Text="UI made by: lucid.id on Discord" Foreground="#D9CBFF" FontSize="12" Margin="4,0,0,14"/>
+                        <Button Content="Import .lua / .txt" Style="{StaticResource GlowButtonStyle}" Margin="0,0,0,10" Click="ImportScriptFiles_Click"/>
+                        <TextBlock Text="Saved Files" Foreground="#DCCBFF" FontFamily="Consolas" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <ListBox x:Name="SavedFilesList"
+                                 Background="#14161F" Foreground="#F0F0F0" BorderThickness="1" BorderBrush="#443A4A71"
+                                 MinHeight="280" MouseDoubleClick="SavedFilesList_MouseDoubleClick"/>
                     </StackPanel>
                 </Border>
 
@@ -423,10 +404,49 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                <Border Grid.Row="0" Background="#2A1A45" CornerRadius="10" Margin="8,6,8,4" Padding="8,4">
-                                    <TextBlock x:Name="PinnedScopeText" Text="Scope: Global"
-                                               Foreground="#DCCBFF" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"/>
-                                </Border>
+                                <Grid Grid.Row="0" Margin="8,6,8,4">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" Background="#2A1A45" CornerRadius="10" Padding="8,4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock x:Name="PinnedScopeText" Text="Scope: Global"
+                                                       Foreground="#DCCBFF" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"/>
+                                            <Button Grid.Column="1" Content="+ Tab" Margin="8,0,0,0" Padding="8,2"
+                                                    Style="{StaticResource GlowButtonStyle}" Click="AddEditorTab_Click"/>
+                                        </Grid>
+                                    </Border>
+                                    <StackPanel Grid.Row="1" Margin="0,6,0,0">
+                                        <ScrollViewer x:Name="EditorTabsScrollViewer"
+                                                      HorizontalScrollBarVisibility="Hidden"
+                                                      VerticalScrollBarVisibility="Disabled"
+                                                      ScrollChanged="EditorTabsScrollViewer_ScrollChanged">
+                                            <ItemsControl x:Name="EditorTabsList">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,6,0">
+                                                            <Button Content="{Binding Title}" Padding="10,3" Click="EditorTabItem_Click" Tag="{Binding}" Style="{StaticResource GlowButtonStyle}"/>
+                                                            <Button Content="×" Width="24" Margin="4,0,0,0" Click="CloseEditorTab_Click" Tag="{Binding}" Style="{StaticResource GlowButtonStyle}"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                        <Slider x:Name="EditorTabsSlider" Minimum="0" Maximum="0" Value="0"
+                                                Margin="0,5,0,0" Height="16"
+                                                ValueChanged="EditorTabsSlider_ValueChanged"/>
+                                    </StackPanel>
+                                </Grid>
                                 <Grid Grid.Row="1">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="56"/>
@@ -529,19 +549,14 @@
                         <Border x:Name="ThemePanel" Margin="10,6,10,12" Visibility="Collapsed"
                                 Background="#D0101220" CornerRadius="18" BorderBrush="#5A607FA6" BorderThickness="1">
                             <StackPanel Margin="16">
-                                <TextBlock Text="Theme Presets" Foreground="#E6E6FF" FontSize="18" FontWeight="Bold"/>
-                                <TextBlock Text="Pick a color style for the whole menu accent." Foreground="#9AA4C5" Margin="0,6,0,14"/>
-                                <CheckBox x:Name="RealtimeHelperToggle" Content="Enable realtime code helper"
-                                          Foreground="#DDE9FF" IsChecked="True" Margin="0,0,0,10"
-                                          Checked="RealtimeHelperToggle_Changed" Unchecked="RealtimeHelperToggle_Changed"/>
-                                <TextBlock x:Name="SyntaxStatusText" Text="Syntax status: Ready"
-                                           Foreground="#9CD9A7" FontSize="11" Margin="0,0,0,12"/>
-                                <WrapPanel>
-                                    <Button Content="Default" Tag="Default" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
-                                    <Button Content="Ocean" Tag="Ocean" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
-                                    <Button Content="Sunset" Tag="Sunset" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
-                                    <Button Content="Forest" Tag="Forest" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
-                                </WrapPanel>
+                                <TextBlock Text="General" Foreground="#E6E6FF" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+                                <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Reset State" Foreground="#DDE9FF" FontWeight="SemiBold"/><TextBlock Text="Resets local app settings and temporary state." Foreground="#8E9AB8" FontSize="11"/></StackPanel><Button Grid.Column="1" Content="Reset" Width="80" Style="{StaticResource GlowButtonStyle}" Click="GeneralAction_Click" Tag="reset-state"/></Grid>
+                                <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Reset Hardware ID" Foreground="#DDE9FF" FontWeight="SemiBold"/><TextBlock Text="Calls Syn-Z API reset HWID helper." Foreground="#8E9AB8" FontSize="11"/></StackPanel><Button Grid.Column="1" Content="Reset" Width="80" Style="{StaticResource GlowButtonStyle}" Click="GeneralAction_Click" Tag="reset-hwid"/></Grid>
+                                <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Create autoexec/workspace shortcuts" Foreground="#DDE9FF" FontWeight="SemiBold"/><TextBlock Text="Creates shortcut folders in app directory." Foreground="#8E9AB8" FontSize="11"/></StackPanel><Button Grid.Column="1" Content="Create" Width="80" Style="{StaticResource GlowButtonStyle}" Click="GeneralAction_Click" Tag="create-shortcuts"/></Grid>
+                                <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Toggle topmost" Foreground="#DDE9FF" FontWeight="SemiBold"/><TextBlock Text="Enable or disable always-on-top mode." Foreground="#8E9AB8" FontSize="11"/></StackPanel><Button x:Name="TopmostBtn" Grid.Column="1" Content="Enable" Width="80" Style="{StaticResource GlowButtonStyle}" Click="GeneralAction_Click" Tag="toggle-topmost"/></Grid>
+                                <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Open UI folder" Foreground="#DDE9FF" FontWeight="SemiBold"/><TextBlock Text="Open folder containing UI files and scripts." Foreground="#8E9AB8" FontSize="11"/></StackPanel><Button Grid.Column="1" Content="Open" Width="80" Style="{StaticResource GlowButtonStyle}" Click="GeneralAction_Click" Tag="open-ui-folder"/></Grid>
+                                <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Open Synapse Z folder" Foreground="#9EC0FF" FontWeight="SemiBold"/><TextBlock Text="Open folder containing Synapse Z files." Foreground="#8E9AB8" FontSize="11"/></StackPanel><Button Grid.Column="1" Content="Open" Width="80" Style="{StaticResource GlowButtonStyle}" Click="GeneralAction_Click" Tag="open-synz-folder"/></Grid>
+                                <TextBlock x:Name="SyntaxStatusText" Visibility="Collapsed" Text="Syntax status: Ready"/>
                             </StackPanel>
                         </Border>
 
