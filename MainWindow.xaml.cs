@@ -25,7 +25,7 @@ namespace ScriptExecutorUI
             public string DocumentationUrl { get; set; }
             public override string ToString() => Name;
         }
-        private sealed class EditorTabItem
+        public sealed class EditorTabItem
         {
             public string Title { get; set; }
             public string Text { get; set; } = string.Empty;
