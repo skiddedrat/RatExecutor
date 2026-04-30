@@ -686,8 +686,18 @@ namespace ScriptExecutorUI
         private void UpdateSyntaxHighlighting()
         {
             var text = CodeEditor.Text ?? string.Empty;
-            var doc = new FlowDocument { PagePadding = new Thickness(0), LineHeight = 1, TextAlignment = TextAlignment.Left };
-            var paragraph = new Paragraph { Margin = new Thickness(0) };
+            var doc = new FlowDocument
+            {
+                PagePadding = new Thickness(0),
+                TextAlignment = TextAlignment.Left,
+                LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
+                LineHeight = 16
+            };
+            var paragraph = new Paragraph
+            {
+                Margin = new Thickness(0),
+                LineHeight = 16
+            };
 
             var keywords = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase)
             { "function", "local", "if", "then", "else", "elseif", "end", "for", "while", "do", "repeat", "until", "return", "break" };

@@ -311,6 +311,7 @@
                                              IsReadOnly="True" IsHitTestVisible="False"
                                              Background="Transparent" Foreground="#F3F0FF"
                                              BorderThickness="0" Padding="12,10"
+                                             Margin="0,1,0,0"
                                              FontFamily="Consolas" FontSize="13"
                                              VerticalScrollBarVisibility="Hidden"
                                              HorizontalScrollBarVisibility="Hidden"/>
