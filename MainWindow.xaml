@@ -269,9 +269,19 @@
                             </EventTrigger>
                         </Border.Triggers>
                         <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="#2A1A45" CornerRadius="10" Margin="8,6,8,4" Padding="8,4">
+                                <TextBlock x:Name="PinnedScopeText" Text="Scope: Global"
+                                           Foreground="#DCCBFF" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"/>
+                            </Border>
+                            <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="44"/>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="120"/>
                             </Grid.ColumnDefinitions>
                             <Border Grid.Column="0" Background="#3010152A" BorderBrush="#443A4A71" BorderThickness="0,0,1,0">
                                 <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden">
@@ -299,6 +309,21 @@
                                      SelectionChanged="CodeEditor_SelectionChanged"
                                      PreviewTextInput="CodeEditor_PreviewTextInput"
                                      PreviewKeyDown="CodeEditor_PreviewKeyDown"/>
+                            <Border Grid.Column="2" Margin="6,0,6,0" Background="#20172634" CornerRadius="8" BorderBrush="#4D5B73A6" BorderThickness="1">
+                                <TextBox x:Name="MiniMapPreview"
+                                         IsReadOnly="True"
+                                         Background="Transparent"
+                                         Foreground="#8EA0C7"
+                                         BorderThickness="0"
+                                         FontFamily="Consolas"
+                                         FontSize="5.8"
+                                         TextWrapping="NoWrap"
+                                         VerticalScrollBarVisibility="Hidden"
+                                         HorizontalScrollBarVisibility="Hidden"
+                                         IsHitTestVisible="False"
+                                         Padding="3,4"/>
+                            </Border>
+                            </Grid>
                         </Grid>
                     </Border>
 

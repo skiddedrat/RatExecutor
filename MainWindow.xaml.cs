@@ -306,6 +306,8 @@ namespace ScriptExecutorUI
         private void CodeEditor_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             UpdateLineNumbers();
+            UpdateMiniMap();
+            UpdatePinnedScope();
             ValidateBasicSyntax();
             if (!_isRealtimeHelperEnabled)
             {
@@ -455,6 +457,7 @@ namespace ScriptExecutorUI
         private void EditorScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             LineNumbersText.RenderTransform = new TranslateTransform(0, -e.VerticalOffset);
+            SyncMiniMapScroll(e);
         }
 
         private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
@@ -473,6 +476,7 @@ namespace ScriptExecutorUI
 
         private void CodeEditor_SelectionChanged(object sender, RoutedEventArgs e)
         {
+            UpdatePinnedScope();
             if (SuggestionPopup.IsVisible)
             {
                 PositionSuggestionPopup();
@@ -523,6 +527,58 @@ namespace ScriptExecutorUI
             {
                 SuggestionPopup.Visibility = Visibility.Collapsed;
             }
+        }
+
+        private void UpdateMiniMap()
+        {
+            var lines = CodeEditor.Text.Split('\n');
+            if (lines.Length == 0)
+            {
+                MiniMapPreview.Text = string.Empty;
+                return;
+            }
+
+            MiniMapPreview.Text = string.Join("\n", lines.Select(l =>
+            {
+                var trimmed = l.Trim();
+                if (trimmed.Length > 56) trimmed = trimmed.Substring(0, 56);
+                return trimmed;
+            }));
+        }
+
+        private void SyncMiniMapScroll(ScrollChangedEventArgs e)
+        {
+            var miniScroll = FindVisualChild<ScrollViewer>(MiniMapPreview);
+            if (miniScroll == null || _editorScrollViewer == null || _editorScrollViewer.ExtentHeight <= 0)
+                return;
+
+            var ratio = e.VerticalOffset / Math.Max(1.0, _editorScrollViewer.ScrollableHeight);
+            var target = ratio * miniScroll.ScrollableHeight;
+            miniScroll.ScrollToVerticalOffset(target);
+        }
+
+        private void UpdatePinnedScope()
+        {
+            var caret = CodeEditor.CaretIndex;
+            var upToCaret = CodeEditor.Text.Substring(0, Math.Max(0, Math.Min(caret, CodeEditor.Text.Length)));
+            var lines = upToCaret.Split('\n');
+
+            for (int i = lines.Length - 1; i >= 0; i--)
+            {
+                var line = lines[i].Trim();
+                if (line.StartsWith("function ", StringComparison.OrdinalIgnoreCase))
+                {
+                    PinnedScopeText.Text = $"Scope: {line}";
+                    return;
+                }
+                if (line.StartsWith("local function ", StringComparison.OrdinalIgnoreCase))
+                {
+                    PinnedScopeText.Text = $"Scope: {line}";
+                    return;
+                }
+            }
+
+            PinnedScopeText.Text = "Scope: Global";
         }
 
         private void ValidateBasicSyntax()
