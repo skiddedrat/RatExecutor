@@ -306,21 +306,30 @@
                                                Text="1"/>
                                 </ScrollViewer>
                             </Border>
-                            <TextBox x:Name="CodeEditor" Grid.Column="1"
-                                     Background="Transparent" Foreground="#F3F0FF"
-                                     CaretBrush="#FFFFFF"
-                                     BorderThickness="0"
-                                     FontFamily="Consolas" FontSize="13"
-                                     AcceptsReturn="True" AcceptsTab="True"
-                                     VerticalScrollBarVisibility="Auto"
-                                     TextWrapping="NoWrap"
-                                     Padding="12,10"
-                                     Visibility="Visible"
-                                     TextChanged="CodeEditor_TextChanged"
-                                     Loaded="CodeEditor_Loaded"
-                                     SelectionChanged="CodeEditor_SelectionChanged"
-                                     PreviewTextInput="CodeEditor_PreviewTextInput"
-                                     PreviewKeyDown="CodeEditor_PreviewKeyDown"/>
+                            <Grid Grid.Column="1">
+                                <RichTextBox x:Name="SyntaxOverlay"
+                                             IsReadOnly="True" IsHitTestVisible="False"
+                                             Background="Transparent" Foreground="#F3F0FF"
+                                             BorderThickness="0" Padding="12,10"
+                                             FontFamily="Consolas" FontSize="13"
+                                             VerticalScrollBarVisibility="Hidden"
+                                             HorizontalScrollBarVisibility="Hidden"/>
+                                <TextBox x:Name="CodeEditor"
+                                         Background="Transparent" Foreground="#03FFFFFF"
+                                         CaretBrush="#FFFFFF"
+                                         BorderThickness="0"
+                                         FontFamily="Consolas" FontSize="13"
+                                         AcceptsReturn="True" AcceptsTab="True"
+                                         VerticalScrollBarVisibility="Auto"
+                                         TextWrapping="NoWrap"
+                                         Padding="12,10"
+                                         Visibility="Visible"
+                                         TextChanged="CodeEditor_TextChanged"
+                                         Loaded="CodeEditor_Loaded"
+                                         SelectionChanged="CodeEditor_SelectionChanged"
+                                         PreviewTextInput="CodeEditor_PreviewTextInput"
+                                         PreviewKeyDown="CodeEditor_PreviewKeyDown"/>
+                            </Grid>
                             <Border Grid.Column="2" Margin="6,0,6,0" Background="#20172634" CornerRadius="8" BorderBrush="#4D5B73A6" BorderThickness="1">
                                 <TextBox x:Name="MiniMapPreview"
                                          IsReadOnly="True"

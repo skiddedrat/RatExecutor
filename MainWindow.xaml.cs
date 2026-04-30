@@ -30,6 +30,7 @@ namespace ScriptExecutorUI
         private uint _selectedPid = 0;
         private CancellationTokenSource _cts = null;
         private ScrollViewer _editorScrollViewer;
+        private ScrollViewer _overlayScrollViewer;
         private bool _isRealtimeHelperEnabled = true;
         private readonly SuggestionItem[] _suncSuggestions =
         {
@@ -363,7 +364,7 @@ namespace ScriptExecutorUI
             UpdateMiniMap();
             UpdatePinnedScope();
             ValidateBasicSyntax();
-            ApplyEditorKeywordTint();
+            UpdateSyntaxHighlighting();
             if (!_isRealtimeHelperEnabled)
             {
                 SuggestionPopup.IsOpen = false;
@@ -538,11 +539,19 @@ namespace ScriptExecutorUI
             {
                 _editorScrollViewer.ScrollChanged += EditorScrollViewer_ScrollChanged;
             }
+
+            _overlayScrollViewer = FindVisualChild<ScrollViewer>(SyntaxOverlay);
+            UpdateSyntaxHighlighting();
         }
 
         private void EditorScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             LineNumbersText.RenderTransform = new TranslateTransform(0, -e.VerticalOffset);
+            if (_overlayScrollViewer != null)
+            {
+                _overlayScrollViewer.ScrollToVerticalOffset(e.VerticalOffset);
+                _overlayScrollViewer.ScrollToHorizontalOffset(e.HorizontalOffset);
+            }
             SyncMiniMapScroll(e);
         }
 
@@ -667,26 +676,60 @@ namespace ScriptExecutorUI
             PinnedScopeText.Text = "Scope: Global";
         }
 
-        private void ApplyEditorKeywordTint()
+        private void UpdateSyntaxHighlighting()
         {
-            var caret = CodeEditor.CaretIndex;
-            var text = CodeEditor.Text;
-            var lineStart = text.LastIndexOf('
-', Math.Max(0, caret - 1));
-            lineStart = lineStart == -1 ? 0 : lineStart + 1;
-            var lineEnd = text.IndexOf('
-', caret);
-            if (lineEnd == -1) lineEnd = text.Length;
-            var line = text.Substring(lineStart, Math.Max(0, lineEnd - lineStart)).TrimStart();
+            var text = CodeEditor.Text ?? string.Empty;
+            var doc = new FlowDocument { PagePadding = new Thickness(0), LineHeight = 1, TextAlignment = TextAlignment.Left };
+            var paragraph = new Paragraph { Margin = new Thickness(0) };
 
-            if (line.StartsWith("function ", StringComparison.OrdinalIgnoreCase) || line.StartsWith("local ", StringComparison.OrdinalIgnoreCase))
-                CodeEditor.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x8C, 0x8C));
-            else if (line.StartsWith("if ", StringComparison.OrdinalIgnoreCase) || line.StartsWith("for ", StringComparison.OrdinalIgnoreCase) || line.StartsWith("while ", StringComparison.OrdinalIgnoreCase))
-                CodeEditor.Foreground = new SolidColorBrush(Color.FromRgb(0x87, 0xCE, 0xFA));
-            else if (IsCaretInsideString(text, caret))
-                CodeEditor.Foreground = new SolidColorBrush(Color.FromRgb(0xA8, 0xE6, 0xA3));
-            else
-                CodeEditor.Foreground = new SolidColorBrush(Color.FromRgb(0xF3, 0xF0, 0xFF));
+            var keywords = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "function", "local", "if", "then", "else", "elseif", "end", "for", "while", "do", "repeat", "until", "return", "break" };
+
+            int i = 0;
+            while (i < text.Length)
+            {
+                char c = text[i];
+                if (c == '-' && i + 1 < text.Length && text[i + 1] == '-')
+                {
+                    int start = i;
+                    while (i < text.Length && text[i] != '
+') i++;
+                    paragraph.Inlines.Add(new Run(text.Substring(start, i - start)) { Foreground = Brushes.Gray });
+                    continue;
+                }
+
+                if (c == '"' || c == ''')
+                {
+                    char q = c; int start = i++; bool esc = false;
+                    while (i < text.Length)
+                    {
+                        if (esc) { esc = false; i++; continue; }
+                        if (text[i] == '\') { esc = true; i++; continue; }
+                        if (text[i] == q) { i++; break; }
+                        i++;
+                    }
+                    paragraph.Inlines.Add(new Run(text.Substring(start, i - start)) { Foreground = new SolidColorBrush(Color.FromRgb(0xA8,0xE6,0xA3)) });
+                    continue;
+                }
+
+                if (char.IsLetter(c) || c == '_')
+                {
+                    int start = i++;
+                    while (i < text.Length && (char.IsLetterOrDigit(text[i]) || text[i] == '_')) i++;
+                    var token = text.Substring(start, i - start);
+                    var run = new Run(token);
+                    if (keywords.Contains(token)) run.Foreground = new SolidColorBrush(Color.FromRgb(0xFF,0x8C,0x8C));
+                    else run.Foreground = new SolidColorBrush(Color.FromRgb(0xF3,0xF0,0xFF));
+                    paragraph.Inlines.Add(run);
+                    continue;
+                }
+
+                paragraph.Inlines.Add(new Run(c.ToString()) { Foreground = new SolidColorBrush(Color.FromRgb(0xF3,0xF0,0xFF)) });
+                i++;
+            }
+
+            doc.Blocks.Add(paragraph);
+            SyntaxOverlay.Document = doc;
         }
 
         private void ValidateBasicSyntax()
