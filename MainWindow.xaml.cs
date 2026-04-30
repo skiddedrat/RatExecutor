@@ -35,6 +35,7 @@ namespace ScriptExecutorUI
             InitializeComponent();
             LoadAccordionData();
             ApplyStaticGlowEffects();
+            AppendConsole($"[Ready] Console initialized at {DateTime.Now:HH:mm:ss}\n", Colors.LightSkyBlue);
 
             // Start automatic session tracking
             SynapseZAPI2.StartInstancesTimer();
@@ -140,7 +141,8 @@ namespace ScriptExecutorUI
             Dispatcher.Invoke(() =>
             {
                 var range = new TextRange(ConsoleOutput.Document.ContentEnd, ConsoleOutput.Document.ContentEnd);
-                range.Text = text;
+                var line = text.StartsWith("[") ? $"{DateTime.Now:HH:mm:ss} {text}" : text;
+                range.Text = line;
                 range.ApplyPropertyValue(TextElement.ForegroundProperty, new SolidColorBrush(color));
                 ConsoleOutput.ScrollToEnd();
             });

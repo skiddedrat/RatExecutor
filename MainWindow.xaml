@@ -135,7 +135,12 @@
     </Window.Resources>
 
     <Grid>
-        <Rectangle Fill="#080914"/>
+        <Border Margin="12" CornerRadius="28" Background="#E0050710" BorderBrush="#70406195" BorderThickness="1.2">
+            <Border.Effect>
+                <DropShadowEffect Color="#000000" BlurRadius="30" ShadowDepth="0" Opacity="0.45"/>
+            </Border.Effect>
+        </Border>
+        <Rectangle Fill="#080914" Margin="14" RadiusX="26" RadiusY="26"/>
         <Border Height="4" VerticalAlignment="Top" Margin="26,10,26,0" CornerRadius="2" Background="#A0A020F0"/>
         <Border Height="4" VerticalAlignment="Bottom" Margin="26,0,26,10" CornerRadius="2" Background="#A0D238FF"/>
         <Border x:Name="MainBorder" Margin="24" Background="Transparent"
@@ -282,14 +287,22 @@
                         </StackPanel>
                     </Border>
 
-                    <RichTextBox x:Name="ConsoleOutput" Grid.Row="2"
-                                 Background="#121212" Foreground="#E0E0E0"
-                                 BorderThickness="0"
-                                 FontFamily="Consolas" FontSize="12"
-                                 IsReadOnly="True"
-                                 VerticalScrollBarVisibility="Auto"
-                                 Padding="15,10"
-                                 Visibility="Collapsed"/>
+                    <Border Grid.Row="2" Margin="10,6,10,12" CornerRadius="18" BorderBrush="#6577A6D1" BorderThickness="1.1" Visibility="{Binding Visibility, ElementName=ConsoleOutput}">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#111726" Offset="0"/>
+                                <GradientStop Color="#16122B" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <RichTextBox x:Name="ConsoleOutput"
+                                     Background="Transparent" Foreground="#DDE9FF"
+                                     BorderThickness="0"
+                                     FontFamily="Consolas" FontSize="12"
+                                     IsReadOnly="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     Padding="15,10"
+                                     Visibility="Collapsed"/>
+                    </Border>
 
                     <!-- Floating action bar -->
                     <Border Grid.Row="2" Background="#CC101522"
