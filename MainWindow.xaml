@@ -549,13 +549,25 @@
                         <Border x:Name="ThemePanel" Margin="10,6,10,12" Visibility="Collapsed"
                                 Background="#D0101220" CornerRadius="18" BorderBrush="#5A607FA6" BorderThickness="1">
                             <StackPanel Margin="16">
-                                <TextBlock Text="Theme Presets" Foreground="#E6E6FF" FontSize="18" FontWeight="Bold"/>
-                                <TextBlock Text="Pick a color style for the whole menu accent." Foreground="#9AA4C5" Margin="0,6,0,14"/>
+                                <TextBlock Text="Settings" Foreground="#E6E6FF" FontSize="18" FontWeight="Bold"/>
+                                <TextBlock Text="Editor behavior and appearance controls." Foreground="#9AA4C5" Margin="0,6,0,14"/>
                                 <CheckBox x:Name="RealtimeHelperToggle" Content="Enable realtime code helper"
                                           Foreground="#DDE9FF" IsChecked="True" Margin="0,0,0,10"
                                           Checked="RealtimeHelperToggle_Changed" Unchecked="RealtimeHelperToggle_Changed"/>
+                                <CheckBox x:Name="AutoIndentToggle" Content="Enable auto indent on Enter"
+                                          Foreground="#DDE9FF" IsChecked="True" Margin="0,0,0,10"/>
+                                <CheckBox x:Name="WordWrapToggle" Content="Enable word wrap"
+                                          Foreground="#DDE9FF" IsChecked="False" Margin="0,0,0,10"
+                                          Checked="WordWrapToggle_Changed" Unchecked="WordWrapToggle_Changed"/>
+                                <CheckBox x:Name="MiniMapToggle" Content="Show minimap"
+                                          Foreground="#DDE9FF" IsChecked="True" Margin="0,0,0,10"
+                                          Checked="MiniMapToggle_Changed" Unchecked="MiniMapToggle_Changed"/>
+                                <TextBlock Text="Font Size" Foreground="#DDE9FF" Margin="0,4,0,2"/>
+                                <Slider x:Name="EditorFontSlider" Minimum="10" Maximum="22" Value="13" Margin="0,0,0,10"
+                                        ValueChanged="EditorFontSlider_ValueChanged"/>
                                 <TextBlock x:Name="SyntaxStatusText" Text="Syntax status: Ready"
                                            Foreground="#9CD9A7" FontSize="11" Margin="0,0,0,12"/>
+                                <Button Content="Apply Settings" Style="{StaticResource GlowButtonStyle}" Margin="0,0,0,12" Click="ApplySettings_Click"/>
                                 <WrapPanel>
                                     <Button Content="Default" Tag="Default" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
                                     <Button Content="Ocean" Tag="Ocean" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>

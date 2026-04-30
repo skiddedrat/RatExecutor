@@ -637,7 +637,7 @@ namespace ScriptExecutorUI
         private void CodeEditor_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             UpdateCaretPosition();
-            if (e.Key == Key.Enter && !SuggestionPopup.IsOpen)
+            if (e.Key == Key.Enter && !SuggestionPopup.IsOpen && AutoIndentToggle?.IsChecked == true)
             {
                 HandleAutoIndentEnter();
                 e.Handled = true;
@@ -828,6 +828,36 @@ namespace ScriptExecutorUI
             _isRealtimeHelperEnabled = RealtimeHelperToggle.IsChecked == true;
             if (!_isRealtimeHelperEnabled)
                 SuggestionPopup.IsOpen = false;
+        }
+
+        private void WordWrapToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            var wrap = WordWrapToggle?.IsChecked == true ? TextWrapping.Wrap : TextWrapping.NoWrap;
+            CodeEditor.TextWrapping = wrap;
+            SyntaxOverlay.Document.TextAlignment = TextAlignment.Left;
+        }
+
+        private void MiniMapToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            MiniMapPreview.Visibility = MiniMapToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void EditorFontSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (CodeEditor == null || SyntaxOverlay == null || MiniMapPreview == null)
+                return;
+            CodeEditor.FontSize = e.NewValue;
+            SyntaxOverlay.FontSize = e.NewValue;
+            MiniMapPreview.FontSize = Math.Max(5, e.NewValue * 0.45);
+            UpdateCaretPosition();
+        }
+
+        private void ApplySettings_Click(object sender, RoutedEventArgs e)
+        {
+            WordWrapToggle_Changed(sender, e);
+            MiniMapToggle_Changed(sender, e);
+            EditorFontSlider_ValueChanged(EditorFontSlider, new RoutedPropertyChangedEventArgs<double>(EditorFontSlider.Value, EditorFontSlider.Value));
+            AppendConsole("[Info] Settings applied.\n", Colors.LightSkyBlue);
         }
 
         private void UpdateMiniMap()
