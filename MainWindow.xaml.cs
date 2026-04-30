@@ -11,6 +11,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Controls.Primitives;
+using System.Windows.Navigation;
 
 namespace ScriptExecutorUI
 {
@@ -18,8 +19,10 @@ namespace ScriptExecutorUI
     {
         private sealed class SuggestionItem
         {
-            public string Name { get; init; }
-            public string Description { get; init; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+            public string Signature { get; set; }
+            public string DocumentationUrl { get; set; }
             public override string ToString() => Name;
         }
 
@@ -27,50 +30,51 @@ namespace ScriptExecutorUI
         private uint _selectedPid = 0;
         private CancellationTokenSource _cts = null;
         private ScrollViewer _editorScrollViewer;
+        private ScrollViewer _overlayScrollViewer;
         private bool _isRealtimeHelperEnabled = true;
         private readonly SuggestionItem[] _suncSuggestions =
         {
-            new SuggestionItem { Name = "print()", Description = "Output text/value to console." },
-            new SuggestionItem { Name = "warn()", Description = "Output warning message." },
-            new SuggestionItem { Name = "error()", Description = "Throw an error and stop execution." },
-            new SuggestionItem { Name = "task.wait()", Description = "Yield current thread for duration." },
-            new SuggestionItem { Name = "task.spawn()", Description = "Run function asynchronously." },
-            new SuggestionItem { Name = "task.delay()", Description = "Run function after delay." },
-            new SuggestionItem { Name = "pairs()", Description = "Iterate key/value table pairs." },
-            new SuggestionItem { Name = "ipairs()", Description = "Iterate array-like table values." },
-            new SuggestionItem { Name = "pcall()", Description = "Call function in protected mode." },
-            new SuggestionItem { Name = "xpcall()", Description = "Protected call with custom handler." },
+            new SuggestionItem { Name = "print", Signature = "print(...: T...) : ()", Description = "Prints all provided values to the output.", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#print" },
+            new SuggestionItem { Name = "warn", Description = "Output warning message.", Signature = "warn(...: T...) : ()", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#warn" },
+            new SuggestionItem { Name = "error", Description = "Throw an error and stop execution.", Signature = "error(message: string, level: number?) : ()", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#error" },
+            new SuggestionItem { Name = "task.wait", Description = "Yield current thread for duration.", Signature = "task.wait(duration: number?) : number", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/libraries/task#wait" },
+            new SuggestionItem { Name = "task.spawn", Description = "Run function asynchronously.", Signature = "task.spawn(f: function, ...: any) : thread", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/libraries/task#spawn" },
+            new SuggestionItem { Name = "task.delay", Description = "Run function after delay.", Signature = "task.delay(duration: number, f: function, ...: any) : thread", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/libraries/task#delay" },
+            new SuggestionItem { Name = "pairs", Signature = "pairs(t: table) : (function, table, any)", Description = "Iterate key/value table pairs.", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#pairs" },
+            new SuggestionItem { Name = "ipairs", Description = "Iterate array-like table values.", Signature = "ipairs(t: table) : (function, table, number)", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#ipairs" },
+            new SuggestionItem { Name = "pcall", Signature = "pcall(f: function, ...: any) : (boolean, ...any)", Description = "Call function in protected mode.", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#pcall" },
+            new SuggestionItem { Name = "xpcall", Description = "Protected call with custom handler.", Signature = "xpcall(f: function, msgh: function, ...: any) : (boolean, ...any)", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#xpcall" },
             new SuggestionItem { Name = "game:GetService(\"Players\")", Description = "Get Players service." },
             new SuggestionItem { Name = "game:GetService(\"RunService\")", Description = "Get RunService." },
             new SuggestionItem { Name = "game:GetService(\"TweenService\")", Description = "Get TweenService." },
             new SuggestionItem { Name = "game:GetService(\"ReplicatedStorage\")", Description = "Get shared storage service." },
             new SuggestionItem { Name = "workspace", Description = "Top-level 3D world container." },
-            new SuggestionItem { Name = "Instance.new()", Description = "Create a new Roblox instance." },
-            new SuggestionItem { Name = "Vector3.new()", Description = "Create 3D vector value." },
-            new SuggestionItem { Name = "CFrame.new()", Description = "Create position/orientation frame." },
-            new SuggestionItem { Name = "UDim2.new()", Description = "Create 2D UI dimension." },
-            new SuggestionItem { Name = "Color3.fromRGB()", Description = "Create RGB color." },
-            new SuggestionItem { Name = "workspace:Raycast()", Description = "Cast ray into the world." },
-            new SuggestionItem { Name = "RaycastParams.new()", Description = "Configure raycast filters." },
-            new SuggestionItem { Name = "RemoteEvent:FireServer()", Description = "Send event from client to server." },
-            new SuggestionItem { Name = "RemoteFunction:InvokeServer()", Description = "Invoke remote function on server." },
-            new SuggestionItem { Name = "RunService.Heartbeat:Connect()", Description = "Run callback each frame heartbeat." },
-            new SuggestionItem { Name = "RunService.RenderStepped:Connect()", Description = "Run callback each render step." },
-            new SuggestionItem { Name = "Players.PlayerAdded:Connect()", Description = "Callback when player joins." },
-            new SuggestionItem { Name = "player.CharacterAdded:Connect()", Description = "Callback when character spawns." },
-            new SuggestionItem { Name = "part.Touched:Connect()", Description = "Callback when part is touched." },
-            new SuggestionItem { Name = "Instance.Changed:Connect()", Description = "Callback when property changes." },
-            new SuggestionItem { Name = "table.insert()", Description = "Insert value into table." },
-            new SuggestionItem { Name = "table.remove()", Description = "Remove value from table." },
-            new SuggestionItem { Name = "table.find()", Description = "Find value index in table." },
-            new SuggestionItem { Name = "string.split()", Description = "Split string by separator." },
-            new SuggestionItem { Name = "string.format()", Description = "Format string with placeholders." },
-            new SuggestionItem { Name = "math.clamp()", Description = "Clamp number to min/max." },
-            new SuggestionItem { Name = "math.floor()", Description = "Round down number." },
-            new SuggestionItem { Name = "math.random()", Description = "Generate random number." },
-            new SuggestionItem { Name = "TweenInfo.new()", Description = "Create tween configuration." },
-            new SuggestionItem { Name = "Humanoid:MoveTo()", Description = "Move humanoid to target point." },
-            new SuggestionItem { Name = "Humanoid.Jump = true", Description = "Trigger humanoid jump." },
+            new SuggestionItem { Name = "Instance.new", Description = "Create a new Roblox instance.", Signature = "Instance.new(className: string, parent: Instance?) : Instance" },
+            new SuggestionItem { Name = "Vector3.new", Description = "Create 3D vector value.", Signature = "Vector3.new(x: number, y: number, z: number) : Vector3" },
+            new SuggestionItem { Name = "CFrame.new", Description = "Create position/orientation frame.", Signature = "CFrame.new(x: number, y: number, z: number) : CFrame" },
+            new SuggestionItem { Name = "UDim2.new", Description = "Create 2D UI dimension.", Signature = "UDim2.new(xScale: number, xOffset: number, yScale: number, yOffset: number) : UDim2" },
+            new SuggestionItem { Name = "Color3.fromRGB", Description = "Create RGB color.", Signature = "Color3.fromRGB(r: number, g: number, b: number) : Color3" },
+            new SuggestionItem { Name = "workspace:Raycast", Description = "Cast ray into the world.", Signature = "workspace:Raycast(origin: Vector3, direction: Vector3, params: RaycastParams?) : RaycastResult?" },
+            new SuggestionItem { Name = "RaycastParams.new", Description = "Configure raycast filters.", Signature = "RaycastParams.new() : RaycastParams" },
+            new SuggestionItem { Name = "RemoteEvent:FireServer", Description = "Send event from client to server." },
+            new SuggestionItem { Name = "RemoteFunction:InvokeServer", Description = "Invoke remote function on server." },
+            new SuggestionItem { Name = "RunService.Heartbeat:Connect", Description = "Run callback each frame heartbeat." },
+            new SuggestionItem { Name = "RunService.RenderStepped:Connect", Description = "Run callback each render step." },
+            new SuggestionItem { Name = "Players.PlayerAdded:Connect", Description = "Callback when player joins." },
+            new SuggestionItem { Name = "player.CharacterAdded:Connect", Description = "Callback when character spawns." },
+            new SuggestionItem { Name = "part.Touched:Connect", Description = "Callback when part is touched." },
+            new SuggestionItem { Name = "Instance.Changed:Connect", Description = "Callback when property changes." },
+            new SuggestionItem { Name = "table.insert", Description = "Insert value into table.", Signature = "table.insert(t: table, value: any) : ()" },
+            new SuggestionItem { Name = "table.remove", Description = "Remove value from table.", Signature = "table.remove(t: table, index: number?) : any" },
+            new SuggestionItem { Name = "table.find", Description = "Find value index in table.", Signature = "table.find(t: table, value: any, init: number?) : number?" },
+            new SuggestionItem { Name = "string.split", Description = "Split string by separator.", Signature = "string.split(s: string, sep: string) : {string}" },
+            new SuggestionItem { Name = "string.format", Description = "Format string with placeholders.", Signature = "string.format(fmt: string, ...: any) : string" },
+            new SuggestionItem { Name = "math.clamp", Description = "Clamp number to min/max.", Signature = "math.clamp(n: number, min: number, max: number) : number" },
+            new SuggestionItem { Name = "math.floor", Description = "Round down number.", Signature = "math.floor(n: number) : number" },
+            new SuggestionItem { Name = "math.random", Description = "Generate random number.", Signature = "math.random(m: number?, n: number?) : number" },
+            new SuggestionItem { Name = "TweenInfo.new", Description = "Create tween configuration.", Signature = "TweenInfo.new(time: number, easingStyle: Enum.EasingStyle, easingDirection: Enum.EasingDirection) : TweenInfo" },
+            new SuggestionItem { Name = "Humanoid:MoveTo", Description = "Move humanoid to target point.", Signature = "Humanoid:MoveTo(location: Vector3) : ()" },
+            new SuggestionItem { Name = "Humanoid.Jump", Description = "Trigger humanoid jump." },
             new SuggestionItem { Name = "function", Description = "Declare a function block." },
             new SuggestionItem { Name = "local", Description = "Declare local variable." },
             new SuggestionItem { Name = "if then", Description = "Conditional logic block." },
@@ -86,10 +90,8 @@ namespace ScriptExecutorUI
             ApplyStaticGlowEffects();
             AppendConsole($"[Ready] Console initialized at {DateTime.Now:HH:mm:ss}\n", Colors.LightSkyBlue);
 
-            // Start automatic session tracking
             SynapseZAPI2.StartInstancesTimer();
 
-            // Wire session events
             SynapseZAPI2.SessionAdded += OnSessionAdded;
             SynapseZAPI2.SessionRemoved += OnSessionRemoved;
             SynapseZAPI2.SessionOutput += OnSessionOutput;
@@ -128,6 +130,29 @@ namespace ScriptExecutorUI
                 AppendConsole($"Selected PID: {_selectedPid}\n", Colors.Cyan);
             }
         }
+
+        private void LaunchRoblox_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "roblox://",
+                    UseShellExecute = true
+                });
+                AppendConsole("[Info] Launching Roblox...\n", Colors.LightSkyBlue);
+            }
+            catch (Exception ex)
+            {
+                AppendConsole($"[Warn] Could not launch Roblox protocol: {ex.Message}. Opening Roblox website instead.\n", Colors.Orange);
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://www.roblox.com/home",
+                    UseShellExecute = true
+                });
+            }
+        }
+
         private void DetectRobloxAndConnection()
         {
             try
@@ -218,10 +243,10 @@ namespace ScriptExecutorUI
         {
             Color color = type switch
             {
-                0 => Colors.White,       // print
-                1 => Colors.Cyan,        // info
-                2 => Colors.Orange,      // warn
-                3 => Colors.Red,         // error
+                0 => Colors.White,
+                1 => Colors.Cyan,
+                2 => Colors.Orange,
+                3 => Colors.Red,
                 _ => Colors.Gray
             };
             string label = type switch
@@ -287,20 +312,26 @@ namespace ScriptExecutorUI
                 Clipboard.SetText(CodeEditor.Text);
         }
 
-        private void PasteEditor_Click(object sender, RoutedEventArgs e)
-        {
-            if (Clipboard.ContainsText())
-            {
-                var caret = CodeEditor.CaretIndex;
-                CodeEditor.Text = CodeEditor.Text.Insert(caret, Clipboard.GetText());
-                CodeEditor.CaretIndex = caret + Clipboard.GetText().Length;
-            }
-        }
-
         private void FormatEditor_Click(object sender, RoutedEventArgs e)
         {
             CodeEditor.Text = CodeEditor.Text.Replace("\t", "    ");
             AppendConsole("[Info] Replaced tabs with spaces.\n", Colors.LightSkyBlue);
+        }
+
+        private static bool IsCaretInsideString(string text, int caret)
+        {
+            bool inString = false;
+            char quote = '\0';
+            bool escaped = false;
+            for (int i = 0; i < Math.Min(caret, text.Length); i++)
+            {
+                var c = text[i];
+                if (escaped) { escaped = false; continue; }
+                if (c == '\\') { escaped = true; continue; }
+                if (!inString && (c == '"' || c == '\'')) { inString = true; quote = c; continue; }
+                if (inString && c == quote) { inString = false; quote = '\0'; }
+            }
+            return inString;
         }
 
         private void CodeEditor_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -309,30 +340,38 @@ namespace ScriptExecutorUI
             UpdateMiniMap();
             UpdatePinnedScope();
             ValidateBasicSyntax();
+            UpdateSyntaxHighlighting();
+
             if (!_isRealtimeHelperEnabled)
             {
-                SuggestionPopup.Visibility = Visibility.Collapsed;
+                SuggestionPopup.IsOpen = false;
                 return;
             }
+
             var caret = CodeEditor.CaretIndex;
             var text = CodeEditor.Text;
-            var start = caret - 1;
-            while (start >= 0 && (char.IsLetterOrDigit(text[start]) || text[start] == '.' || text[start] == '_'))
+
+            if (caret > text.Length || caret == 0)
             {
-                start--;
+                SuggestionPopup.IsOpen = false;
+                return;
             }
 
+            var start = caret - 1;
+            while (start >= 0 && (char.IsLetterOrDigit(text[start]) || text[start] == '.' || text[start] == '_'))
+                start--;
             start++;
-            if (start >= caret || start < 0 || caret > text.Length)
+
+            if (start >= caret || start < 0)
             {
-                SuggestionPopup.Visibility = Visibility.Collapsed;
+                SuggestionPopup.IsOpen = false;
                 return;
             }
 
             var token = text.Substring(start, caret - start);
-            if (token.Length < 1)
+            if (token.Length < 1 || IsCaretInsideString(text, caret))
             {
-                SuggestionPopup.Visibility = Visibility.Collapsed;
+                SuggestionPopup.IsOpen = false;
                 return;
             }
 
@@ -342,24 +381,50 @@ namespace ScriptExecutorUI
                 .ThenBy(x => x.Name.Length)
                 .Take(12)
                 .ToList();
+
             if (matches.Count == 0)
             {
-                SuggestionPopup.Visibility = Visibility.Collapsed;
+                SuggestionPopup.IsOpen = false;
                 return;
+            }
+
+            foreach (var match in matches)
+            {
+                if (string.IsNullOrWhiteSpace(match.Signature))
+                    match.Signature = match.Name;
+                if (string.IsNullOrWhiteSpace(match.DocumentationUrl))
+                    match.DocumentationUrl = "https://create.roblox.com/docs";
             }
 
             SuggestionListBox.ItemsSource = matches;
             SuggestionListBox.SelectedIndex = 0;
+            SuggestionListBox_SelectionChanged(SuggestionListBox, null);
             PositionSuggestionPopup();
-            SuggestionPopup.Visibility = Visibility.Visible;
+            SuggestionPopup.IsOpen = true;
         }
 
         private void SuggestionListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (SuggestionListBox.SelectedItem is SuggestionItem selected)
-            {
                 InsertSuggestion(selected.Name);
-            }
+        }
+
+        private void SuggestionListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (SuggestionListBox.SelectedItem is not SuggestionItem selected)
+                return;
+
+            SuggestionSignatureText.Text = selected.Signature ?? selected.Name;
+            SuggestionDescriptionText.Text = selected.Description ?? string.Empty;
+            SuggestionDocsLink.Tag = selected.DocumentationUrl;
+        }
+
+        private void SuggestionDocsLink_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (SuggestionDocsLink.Tag is not string url || string.IsNullOrWhiteSpace(url))
+                return;
+
+            Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
         }
 
         private void InsertSuggestion(string selected)
@@ -368,14 +433,12 @@ namespace ScriptExecutorUI
             var text = CodeEditor.Text;
             var start = caret - 1;
             while (start >= 0 && (char.IsLetterOrDigit(text[start]) || text[start] == '.' || text[start] == '_'))
-            {
                 start--;
-            }
             start++;
 
             CodeEditor.Text = text.Remove(start, caret - start).Insert(start, selected);
             CodeEditor.CaretIndex = start + selected.Length;
-            SuggestionPopup.Visibility = Visibility.Collapsed;
+            SuggestionPopup.IsOpen = false;
         }
 
         private void CodeEditor_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -400,14 +463,14 @@ namespace ScriptExecutorUI
 
         private void CodeEditor_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter && !SuggestionPopup.IsVisible)
+            if (e.Key == Key.Enter && !SuggestionPopup.IsOpen)
             {
                 HandleAutoIndentEnter();
                 e.Handled = true;
                 return;
             }
 
-            if (!SuggestionPopup.IsVisible)
+            if (!SuggestionPopup.IsOpen)
                 return;
 
             if (e.Key == Key.Down)
@@ -434,7 +497,7 @@ namespace ScriptExecutorUI
             }
             else if (e.Key == Key.Escape)
             {
-                SuggestionPopup.Visibility = Visibility.Collapsed;
+                SuggestionPopup.IsOpen = false;
                 e.Handled = true;
             }
         }
@@ -445,18 +508,28 @@ namespace ScriptExecutorUI
             LineNumbersText.Text = string.Join("\n", Enumerable.Range(1, lineCount));
         }
 
+        // FIX: Defer overlay scroll viewer lookup so it's ready after layout
         private void CodeEditor_Loaded(object sender, RoutedEventArgs e)
         {
             _editorScrollViewer = FindVisualChild<ScrollViewer>(CodeEditor);
             if (_editorScrollViewer != null)
-            {
                 _editorScrollViewer.ScrollChanged += EditorScrollViewer_ScrollChanged;
-            }
+
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+            {
+                _overlayScrollViewer = FindVisualChild<ScrollViewer>(SyntaxOverlay);
+                UpdateSyntaxHighlighting();
+            }));
         }
 
         private void EditorScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             LineNumbersText.RenderTransform = new TranslateTransform(0, -e.VerticalOffset);
+            if (_overlayScrollViewer != null)
+            {
+                _overlayScrollViewer.ScrollToVerticalOffset(e.VerticalOffset);
+                _overlayScrollViewer.ScrollToHorizontalOffset(e.HorizontalOffset);
+            }
             SyncMiniMapScroll(e);
         }
 
@@ -465,11 +538,9 @@ namespace ScriptExecutorUI
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T typed)
-                    return typed;
+                if (child is T typed) return typed;
                 var found = FindVisualChild<T>(child);
-                if (found != null)
-                    return found;
+                if (found != null) return found;
             }
             return null;
         }
@@ -477,21 +548,29 @@ namespace ScriptExecutorUI
         private void CodeEditor_SelectionChanged(object sender, RoutedEventArgs e)
         {
             UpdatePinnedScope();
-            if (SuggestionPopup.IsVisible)
-            {
+            if (SuggestionPopup.IsOpen)
                 PositionSuggestionPopup();
-            }
         }
 
+        // FIX: Use PlacementTarget + RelativePoint for correct popup positioning
         private void PositionSuggestionPopup()
         {
             var caretRect = CodeEditor.GetRectFromCharacterIndex(CodeEditor.CaretIndex, true);
-            if (caretRect.IsEmpty)
-                return;
+            if (caretRect.IsEmpty) return;
 
-            SuggestionPopup.Placement = PlacementMode.Relative;
-            SuggestionPopup.HorizontalOffset = Math.Max(12, caretRect.X + 8);
-            SuggestionPopup.VerticalOffset = Math.Max(16, caretRect.Y + caretRect.Height + 6);
+            var editorPos = CodeEditor.TranslatePoint(new Point(0, 0), this);
+
+            double x = caretRect.X + 8;
+            double y = caretRect.Y + caretRect.Height + 6;
+
+            // Clamp to editor bounds so popup never goes off-screen left/top
+            x = Math.Max(12, x);
+            y = Math.Max(16, y);
+
+            SuggestionPopup.PlacementTarget = CodeEditor;
+            SuggestionPopup.Placement = PlacementMode.RelativePoint;
+            SuggestionPopup.HorizontalOffset = x;
+            SuggestionPopup.VerticalOffset = y;
         }
 
         private void HandleAutoIndentEnter()
@@ -510,23 +589,28 @@ namespace ScriptExecutorUI
                 trimmed.EndsWith("then", StringComparison.OrdinalIgnoreCase) ||
                 trimmed.EndsWith("do", StringComparison.OrdinalIgnoreCase) ||
                 trimmed.EndsWith("function", StringComparison.OrdinalIgnoreCase) ||
-                trimmed.EndsWith("repeat", StringComparison.OrdinalIgnoreCase) ||
                 trimmed.EndsWith("{", StringComparison.OrdinalIgnoreCase);
 
             var extraIndent = opensBlock ? "    " : string.Empty;
-            var insert = "\n" + currentIndent + extraIndent;
 
-            CodeEditor.Text = text.Insert(caret, insert);
-            CodeEditor.CaretIndex = caret + insert.Length;
+            if (opensBlock)
+            {
+                var insert = "\n" + currentIndent + extraIndent + "\n" + currentIndent + "end";
+                CodeEditor.Text = text.Insert(caret, insert);
+                CodeEditor.CaretIndex = caret + ("\n" + currentIndent + extraIndent).Length;
+                return;
+            }
+
+            var singleLineInsert = "\n" + currentIndent;
+            CodeEditor.Text = text.Insert(caret, singleLineInsert);
+            CodeEditor.CaretIndex = caret + singleLineInsert.Length;
         }
 
         private void RealtimeHelperToggle_Changed(object sender, RoutedEventArgs e)
         {
             _isRealtimeHelperEnabled = RealtimeHelperToggle.IsChecked == true;
             if (!_isRealtimeHelperEnabled)
-            {
-                SuggestionPopup.Visibility = Visibility.Collapsed;
-            }
+                SuggestionPopup.IsOpen = false;
         }
 
         private void UpdateMiniMap()
@@ -581,6 +665,101 @@ namespace ScriptExecutorUI
             PinnedScopeText.Text = "Scope: Global";
         }
 
+        // FIX: Clear existing blocks before building new document to prevent XAML bleed-through
+        private void UpdateSyntaxHighlighting()
+        {
+            var text = CodeEditor.Text ?? string.Empty;
+            SyntaxOverlay.Document.Blocks.Clear();
+
+            var doc = new FlowDocument
+            {
+                PagePadding = new Thickness(0),
+                TextAlignment = TextAlignment.Left
+                // REMOVED: LineHeight = 15.6[cite: 1]
+            };
+
+            var paragraph = new Paragraph
+            {
+                Margin = new Thickness(0),
+                Padding = new Thickness(0)
+                // REMOVED: LineHeight = 15.6[cite: 1]
+            };
+
+            var keywords = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "function", "local", "if", "then", "else", "elseif", "end", "for", "while", "do", "repeat", "until", "return", "break" };
+
+            int i = 0;
+            while (i < text.Length)
+            {
+                char c = text[i];
+
+                // Single-line comment: --
+                if (c == '-' && i + 1 < text.Length && text[i + 1] == '-')
+                {
+                    int start = i;
+                    while (i < text.Length && text[i] != '\n') i++;
+                    paragraph.Inlines.Add(new Run(text.Substring(start, i - start)) { Foreground = Brushes.Gray });
+                    continue;
+                }
+
+                // String literals
+                if (c == '"' || c == '\'')
+                {
+                    char q = c;
+                    int start = i++;
+                    bool esc = false;
+                    while (i < text.Length)
+                    {
+                        if (esc) { esc = false; i++; continue; }
+                        if (text[i] == '\\') { esc = true; i++; continue; }
+                        if (text[i] == q) { i++; break; }
+                        i++;
+                    }
+                    paragraph.Inlines.Add(new Run(text.Substring(start, i - start))
+                    {
+                        Foreground = new SolidColorBrush(Color.FromRgb(0xA8, 0xE6, 0xA3))
+                    });
+                    continue;
+                }
+
+                // Identifiers and keywords
+                if (char.IsLetter(c) || c == '_')
+                {
+                    int start = i++;
+                    while (i < text.Length && (char.IsLetterOrDigit(text[i]) || text[i] == '_')) i++;
+                    var token = text.Substring(start, i - start);
+                    var run = new Run(token);
+                    run.Foreground = keywords.Contains(token)
+                        ? new SolidColorBrush(Color.FromRgb(0xFF, 0x8C, 0x8C))
+                        : new SolidColorBrush(Color.FromRgb(0xF3, 0xF0, 0xFF));
+                    paragraph.Inlines.Add(run);
+                    continue;
+                }
+
+                // Numbers
+                if (char.IsDigit(c))
+                {
+                    int start = i++;
+                    while (i < text.Length && (char.IsDigit(text[i]) || text[i] == '.')) i++;
+                    paragraph.Inlines.Add(new Run(text.Substring(start, i - start))
+                    {
+                        Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xD7, 0x8C))
+                    });
+                    continue;
+                }
+
+                // Everything else
+                paragraph.Inlines.Add(new Run(c.ToString())
+                {
+                    Foreground = new SolidColorBrush(Color.FromRgb(0xF3, 0xF0, 0xFF))
+                });
+                i++;
+            }
+
+            doc.Blocks.Add(paragraph);
+            SyntaxOverlay.Document = doc;
+        }
+
         private void ValidateBasicSyntax()
         {
             var text = CodeEditor.Text;
@@ -593,10 +772,12 @@ namespace ScriptExecutorUI
                 else if (c == '}') brace--;
             }
 
-            var starts = text.Split('\n').Count(l => l.TrimStart().StartsWith("function ", StringComparison.OrdinalIgnoreCase)
-                                                   || l.TrimStart().StartsWith("if ", StringComparison.OrdinalIgnoreCase)
-                                                   || l.TrimStart().StartsWith("for ", StringComparison.OrdinalIgnoreCase)
-                                                   || l.TrimStart().StartsWith("while ", StringComparison.OrdinalIgnoreCase));
+            var starts = text.Split('\n').Count(l =>
+                l.TrimStart().StartsWith("function ", StringComparison.OrdinalIgnoreCase) ||
+                l.TrimStart().StartsWith("if ", StringComparison.OrdinalIgnoreCase) ||
+                l.TrimStart().StartsWith("for ", StringComparison.OrdinalIgnoreCase) ||
+                l.TrimStart().StartsWith("while ", StringComparison.OrdinalIgnoreCase));
+
             var ends = text.Split('\n').Count(l => l.Trim().Equals("end", StringComparison.OrdinalIgnoreCase));
 
             if (paren < 0 || brace < 0)
