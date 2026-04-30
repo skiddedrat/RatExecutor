@@ -141,13 +141,11 @@ namespace ScriptExecutorUI
                     FileName = "roblox://",
                     UseShellExecute = true
                 });
-                AppendConsole("[Info] Launching Roblox...
-", Colors.LightSkyBlue);
+                AppendConsole("[Info] Launching Roblox...\n", Colors.LightSkyBlue);
             }
             catch (Exception ex)
             {
-                AppendConsole($"[Warn] Could not launch Roblox protocol: {ex.Message}. Opening Roblox website instead.
-", Colors.Orange);
+                AppendConsole($"[Warn] Could not launch Roblox protocol: {ex.Message}. Opening Roblox website instead.\n", Colors.Orange);
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = "https://www.roblox.com/home",
