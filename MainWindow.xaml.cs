@@ -851,7 +851,10 @@ namespace ScriptExecutorUI
                     Process.Start(new ProcessStartInfo { FileName = Directory.GetCurrentDirectory(), UseShellExecute = true });
                     break;
                 case "open-synz-folder":
-                    Process.Start(new ProcessStartInfo { FileName = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), UseShellExecute = true });
+                    var synzFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Synapse Z");
+                    if (!Directory.Exists(synzFolder))
+                        Directory.CreateDirectory(synzFolder);
+                    Process.Start(new ProcessStartInfo { FileName = synzFolder, UseShellExecute = true });
                     break;
             }
         }
