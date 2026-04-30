@@ -259,18 +259,35 @@
                                 </BeginStoryboard>
                             </EventTrigger>
                         </Border.Triggers>
-                        <TextBox x:Name="CodeEditor"
-                                 Background="Transparent" Foreground="#F3F0FF"
-                                 BorderThickness="0"
-                                 FontFamily="Consolas" FontSize="13"
-                                 AcceptsReturn="True" AcceptsTab="True"
-                                 VerticalScrollBarVisibility="Auto"
-                                 TextWrapping="NoWrap"
-                                 Padding="15,10"
-                                 Visibility="Visible"
-                                 TextChanged="CodeEditor_TextChanged"
-                                 PreviewTextInput="CodeEditor_PreviewTextInput"
-                                 PreviewKeyDown="CodeEditor_PreviewKeyDown"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="44"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Background="#3010152A" BorderBrush="#443A4A71" BorderThickness="0,0,1,0">
+                                <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden">
+                                    <TextBlock x:Name="LineNumbersText"
+                                               Foreground="#6E84B4"
+                                               FontFamily="Consolas"
+                                               FontSize="12"
+                                               TextAlignment="Right"
+                                               Padding="0,12,8,0"
+                                               Text="1"/>
+                                </ScrollViewer>
+                            </Border>
+                            <TextBox x:Name="CodeEditor" Grid.Column="1"
+                                     Background="Transparent" Foreground="#F3F0FF"
+                                     BorderThickness="0"
+                                     FontFamily="Consolas" FontSize="13"
+                                     AcceptsReturn="True" AcceptsTab="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     TextWrapping="NoWrap"
+                                     Padding="12,10"
+                                     Visibility="Visible"
+                                     TextChanged="CodeEditor_TextChanged"
+                                     PreviewTextInput="CodeEditor_PreviewTextInput"
+                                     PreviewKeyDown="CodeEditor_PreviewKeyDown"/>
+                        </Grid>
                     </Border>
 
                     <Border x:Name="ThemePanel" Grid.Row="2" Margin="10,6,10,12" Visibility="Collapsed"
@@ -340,15 +357,15 @@
 
                 <!-- RIGHT FLOATING TABS -->
                 <StackPanel Grid.Column="2" Margin="14,120,12,0" VerticalAlignment="Top">
-                    <Border Background="#C0080B17" CornerRadius="16" Padding="8" BorderBrush="#553A3F65" BorderThickness="1">
+                    <Border Background="#C0080B17" CornerRadius="16" Padding="8" BorderBrush="#553A3F65" BorderThickness="1" Width="62">
                         <StackPanel>
-                    <Button x:Name="EditorTabBtnRight" Style="{StaticResource GlowButtonStyle}" ToolTip="Editor" Margin="0,0,0,10" Click="EditorTab_Click">
+                    <Button x:Name="EditorTabBtnRight" Style="{StaticResource GlowButtonStyle}" ToolTip="Editor" Margin="0,0,0,10" Width="44" Height="40" Click="EditorTab_Click">
                         <fa:IconBlock Icon="Code" Width="20" Height="20"/>
                     </Button>
-                    <Button x:Name="ConsoleTabBtnRight" Style="{StaticResource GlowButtonStyle}" ToolTip="Console" Margin="0,0,0,10" Click="ConsoleTab_Click">
+                    <Button x:Name="ConsoleTabBtnRight" Style="{StaticResource GlowButtonStyle}" ToolTip="Console" Margin="0,0,0,10" Width="44" Height="40" Click="ConsoleTab_Click">
                         <fa:IconBlock Icon="Terminal" Width="20" Height="20"/>
                     </Button>
-                    <Button x:Name="SettingsTabBtn" Style="{StaticResource GlowButtonStyle}" ToolTip="Theme Settings" Click="SettingsTab_Click">
+                    <Button x:Name="SettingsTabBtn" Style="{StaticResource GlowButtonStyle}" ToolTip="Theme Settings" Width="44" Height="40" Click="SettingsTab_Click">
                         <fa:IconBlock Icon="Gear" Width="20" Height="20"/>
                     </Button>
                         </StackPanel>

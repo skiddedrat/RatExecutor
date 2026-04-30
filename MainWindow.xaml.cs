@@ -18,6 +18,8 @@ namespace ScriptExecutorUI
         public ObservableCollection<AccordionSection> Sections { get; set; } = new ObservableCollection<AccordionSection>();
         private uint _selectedPid = 0;
         private CancellationTokenSource _cts = null;
+        private int _enterSuggestionArmed = 0;
+        private DateTime _lastEnterPress = DateTime.MinValue;
         private readonly string[] _suncSuggestions =
         {
             "print", "warn", "error", "getgenv", "getrenv", "getgc", "getinstances",
@@ -234,6 +236,7 @@ namespace ScriptExecutorUI
 
         private void CodeEditor_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
+            UpdateLineNumbers();
             var caret = CodeEditor.CaretIndex;
             var text = CodeEditor.Text;
             var start = caret - 1;
@@ -315,7 +318,10 @@ namespace ScriptExecutorUI
         private void CodeEditor_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (!SuggestionPopup.IsVisible)
+            {
+                _enterSuggestionArmed = 0;
                 return;
+            }
 
             if (e.Key == Key.Down)
             {
@@ -329,16 +335,38 @@ namespace ScriptExecutorUI
                     SuggestionListBox.SelectedIndex--;
                 e.Handled = true;
             }
-            else if ((e.Key == Key.Enter || e.Key == Key.Tab) && SuggestionListBox.SelectedItem is string selected)
+            else if (e.Key == Key.Enter && SuggestionListBox.SelectedItem is string selectedSuggestion)
+            {
+                if ((DateTime.Now - _lastEnterPress).TotalMilliseconds < 650)
+                {
+                    InsertSuggestion(selectedSuggestion);
+                    _enterSuggestionArmed = 0;
+                }
+                else
+                {
+                    _enterSuggestionArmed = 1;
+                }
+                _lastEnterPress = DateTime.Now;
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Tab && SuggestionListBox.SelectedItem is string selected)
             {
                 InsertSuggestion(selected);
+                _enterSuggestionArmed = 0;
                 e.Handled = true;
             }
             else if (e.Key == Key.Escape)
             {
                 SuggestionPopup.Visibility = Visibility.Collapsed;
+                _enterSuggestionArmed = 0;
                 e.Handled = true;
             }
+        }
+
+        private void UpdateLineNumbers()
+        {
+            var lineCount = Math.Max(1, CodeEditor.LineCount);
+            LineNumbersText.Text = string.Join("\n", Enumerable.Range(1, lineCount));
         }
 
         private void SettingsTab_Click(object sender, RoutedEventArgs e)
