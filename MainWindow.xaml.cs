@@ -19,8 +19,7 @@ namespace ScriptExecutorUI
         public ObservableCollection<AccordionSection> Sections { get; set; } = new ObservableCollection<AccordionSection>();
         private uint _selectedPid = 0;
         private CancellationTokenSource _cts = null;
-        private int _enterSuggestionArmed = 0;
-        private DateTime _lastEnterPress = DateTime.MinValue;
+        private ScrollViewer _editorScrollViewer;
         private readonly string[] _suncSuggestions =
         {
             "print", "warn", "error", "getgenv", "getrenv", "getgc", "getinstances",
@@ -245,6 +244,28 @@ namespace ScriptExecutorUI
             AppendConsole("[Info] Console cleared.\n", Colors.DarkGray);
         }
 
+        private void CopyEditor_Click(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(CodeEditor.Text))
+                Clipboard.SetText(CodeEditor.Text);
+        }
+
+        private void PasteEditor_Click(object sender, RoutedEventArgs e)
+        {
+            if (Clipboard.ContainsText())
+            {
+                var caret = CodeEditor.CaretIndex;
+                CodeEditor.Text = CodeEditor.Text.Insert(caret, Clipboard.GetText());
+                CodeEditor.CaretIndex = caret + Clipboard.GetText().Length;
+            }
+        }
+
+        private void FormatEditor_Click(object sender, RoutedEventArgs e)
+        {
+            CodeEditor.Text = CodeEditor.Text.Replace("\t", "    ");
+            AppendConsole("[Info] Replaced tabs with spaces.\n", Colors.LightSkyBlue);
+        }
+
         private void CodeEditor_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             UpdateLineNumbers();
@@ -264,7 +285,7 @@ namespace ScriptExecutorUI
             }
 
             var token = text.Substring(start, caret - start);
-            if (token.Length < 2)
+            if (token.Length < 1)
             {
                 SuggestionPopup.Visibility = Visibility.Collapsed;
                 return;
@@ -341,10 +362,7 @@ namespace ScriptExecutorUI
             }
 
             if (!SuggestionPopup.IsVisible)
-            {
-                _enterSuggestionArmed = 0;
                 return;
-            }
 
             if (e.Key == Key.Down)
             {
@@ -360,28 +378,17 @@ namespace ScriptExecutorUI
             }
             else if (e.Key == Key.Enter && SuggestionListBox.SelectedItem is string selectedSuggestion)
             {
-                if ((DateTime.Now - _lastEnterPress).TotalMilliseconds < 650)
-                {
-                    InsertSuggestion(selectedSuggestion);
-                    _enterSuggestionArmed = 0;
-                }
-                else
-                {
-                    _enterSuggestionArmed = 1;
-                }
-                _lastEnterPress = DateTime.Now;
+                InsertSuggestion(selectedSuggestion);
                 e.Handled = true;
             }
             else if (e.Key == Key.Tab && SuggestionListBox.SelectedItem is string selected)
             {
                 InsertSuggestion(selected);
-                _enterSuggestionArmed = 0;
                 e.Handled = true;
             }
             else if (e.Key == Key.Escape)
             {
                 SuggestionPopup.Visibility = Visibility.Collapsed;
-                _enterSuggestionArmed = 0;
                 e.Handled = true;
             }
         }
@@ -390,6 +397,34 @@ namespace ScriptExecutorUI
         {
             var lineCount = Math.Max(1, CodeEditor.LineCount);
             LineNumbersText.Text = string.Join("\n", Enumerable.Range(1, lineCount));
+        }
+
+        private void CodeEditor_Loaded(object sender, RoutedEventArgs e)
+        {
+            _editorScrollViewer = FindVisualChild<ScrollViewer>(CodeEditor);
+            if (_editorScrollViewer != null)
+            {
+                _editorScrollViewer.ScrollChanged += EditorScrollViewer_ScrollChanged;
+            }
+        }
+
+        private void EditorScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            LineNumbersText.RenderTransform = new TranslateTransform(0, -e.VerticalOffset);
+        }
+
+        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typed)
+                    return typed;
+                var found = FindVisualChild<T>(child);
+                if (found != null)
+                    return found;
+            }
+            return null;
         }
 
         private void CodeEditor_SelectionChanged(object sender, RoutedEventArgs e)

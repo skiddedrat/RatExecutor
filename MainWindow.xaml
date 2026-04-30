@@ -286,6 +286,7 @@
                                      Padding="12,10"
                                      Visibility="Visible"
                                      TextChanged="CodeEditor_TextChanged"
+                                     Loaded="CodeEditor_Loaded"
                                      SelectionChanged="CodeEditor_SelectionChanged"
                                      PreviewTextInput="CodeEditor_PreviewTextInput"
                                      PreviewKeyDown="CodeEditor_PreviewKeyDown"/>
@@ -339,13 +340,13 @@
                             <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Clear Console" Margin="3" Click="ClearConsole_Click">
                                 <fa:IconBlock Icon="Eraser" Width="16" Height="16"/>
                             </Button>
-                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Edit" Margin="3">
+                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Edit" Margin="3" Click="FormatEditor_Click">
                                 <fa:IconBlock Icon="Edit" Width="16" Height="16"/>
                             </Button>
-                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Paste" Margin="3">
+                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Paste" Margin="3" Click="PasteEditor_Click">
                                 <fa:IconBlock Icon="Paste" Width="16" Height="16"/>
                             </Button>
-                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Copy" Margin="3">
+                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Copy" Margin="3" Click="CopyEditor_Click">
                                 <fa:IconBlock Icon="Copy" Width="16" Height="16"/>
                             </Button>
                             <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Execute"
