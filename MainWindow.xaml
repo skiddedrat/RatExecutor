@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:fa="clr-namespace:FontAwesome.Sharp;assembly=FontAwesome.Sharp"
         xmlns:local="clr-namespace:ScriptExecutorUI"
-        Title="Script Executor" Height="700" Width="960"
+        Title="Script Executor" Height="760" Width="1160"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="CanResizeWithGrip"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
@@ -11,35 +11,62 @@
     <Window.Resources>
         <local:BoolToVisibilityConverter x:Key="BoolToVis"/>
 
-        <SolidColorBrush x:Key="DeepDark" Color="#0F0F0F"/>
+        <SolidColorBrush x:Key="DeepDark" Color="#090B14"/>
         <SolidColorBrush x:Key="NeonPurple" Color="#A020F0"/>
-        <SolidColorBrush x:Key="SoftWhite" Color="#E0E0E0"/>
-        <SolidColorBrush x:Key="AccentGreen" Color="#00FF7F"/>
+        <SolidColorBrush x:Key="SoftWhite" Color="#F2F4FF"/>
+        <SolidColorBrush x:Key="AccentGreen" Color="#63FFD2"/>
+        <LinearGradientBrush x:Key="EditorAnimatedBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#101020" Offset="0.0"/>
+            <GradientStop Color="#14142A" Offset="0.45"/>
+            <GradientStop Color="#1F1235" Offset="1.0"/>
+        </LinearGradientBrush>
 
         <Style x:Key="GlowButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Background" Value="#1C1C2C"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Foreground" Value="{StaticResource SoftWhite}"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Setter.Value>
+            </Setter>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border x:Name="buttonBorder" Background="{TemplateBinding Background}" CornerRadius="12" BorderBrush="#3A2A5A" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="buttonBorder" Property="Background" Value="#2A2340"/>
+                                <Setter TargetName="buttonBorder" Property="BorderBrush" Value="#A020F0"/>
+                                <Setter TargetName="buttonBorder" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#A020F0" ShadowDepth="0" BlurRadius="18" Opacity="0.85"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="1.05" ScaleY="1.05"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="buttonBorder" Property="Background" Value="#351A5A"/>
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Effect">
-                        <Setter.Value>
-                            <DropShadowEffect Color="#A020F0" ShadowDepth="0" BlurRadius="12"/>
-                        </Setter.Value>
-                    </Setter>
-                    <Setter Property="Foreground" Value="#F0F0F0"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
 
         <Style x:Key="CloseButtonStyle" TargetType="Button">
@@ -108,24 +135,32 @@
     </Window.Resources>
 
     <Grid>
-        <Border x:Name="MainBorder" Margin="10" Background="{StaticResource DeepDark}"
-                CornerRadius="10" BorderBrush="#2A2A2A" BorderThickness="1">
+        <Border Margin="12" CornerRadius="28" Background="#E0050710" BorderBrush="#70406195" BorderThickness="1.2">
+            <Border.Effect>
+                <DropShadowEffect Color="#000000" BlurRadius="30" ShadowDepth="0" Opacity="0.45"/>
+            </Border.Effect>
+        </Border>
+        <Rectangle Fill="#080914" Margin="14" RadiusX="26" RadiusY="26"/>
+        <Border Height="4" VerticalAlignment="Top" Margin="26,10,26,0" CornerRadius="2" Background="#A0A020F0"/>
+        <Border Height="4" VerticalAlignment="Bottom" Margin="26,0,26,10" CornerRadius="2" Background="#A0D238FF"/>
+        <Border x:Name="MainBorder" Margin="24" Background="Transparent"
+                CornerRadius="22" BorderBrush="Transparent" BorderThickness="0">
             <Border.Effect>
                 <DropShadowEffect Color="#A020F0" ShadowDepth="0" BlurRadius="18"/>
             </Border.Effect>
 
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="220"/>
+                    <ColumnDefinition Width="280"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="60"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- LEFT SIDEBAR -->
-                <Border Grid.Column="0" Background="#1A1A1A" CornerRadius="10,0,0,10" Padding="10">
+                <Border Grid.Column="0" Margin="0,10,8,10" Background="#D0080B17" CornerRadius="18" Padding="18" BorderBrush="#553A3F65" BorderThickness="1.2">
                     <StackPanel Margin="0,15,0,0">
-                        <TextBlock Text="EXECUTOR" FontSize="20" FontWeight="Bold"
-                                   Foreground="{StaticResource NeonPurple}" Margin="10,0,0,15"/>
+                        <TextBlock Text="RAT EXECUTOR" FontSize="24" FontWeight="Bold"
+                                   Foreground="{StaticResource NeonPurple}" Margin="4,0,0,4"/>
                         <ItemsControl x:Name="AccordionItems">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -154,7 +189,7 @@
                 </Border>
 
                 <!-- CENTRAL AREA -->
-                <Grid Grid.Column="1" Background="Transparent">
+                <Grid Grid.Column="1" Margin="0,10,0,10" Background="Transparent">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -163,13 +198,14 @@
                     </Grid.RowDefinitions>
 
                     <!-- Tab Header -->
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,10,0,0">
+                    <Border Grid.Row="0" Margin="10,0,10,6" Background="#50161E35" CornerRadius="14" Padding="8,6" BorderBrush="#3B4B5E91" BorderThickness="1">
+                    <StackPanel Orientation="Horizontal">
                         <Button x:Name="EditorTabBtn" Content="Editor" Width="80" Height="28"
-                                Background="#222" Foreground="{StaticResource SoftWhite}"
+                                Style="{StaticResource GlowButtonStyle}" Background="#2A2340" Foreground="{StaticResource SoftWhite}"
                                 FontWeight="SemiBold" Cursor="Hand"
                                 Click="EditorTab_Click"/>
                         <Button x:Name="ConsoleTabBtn" Content="Console" Width="80" Height="28"
-                                Background="#1A1A1A" Foreground="#888"
+                                Style="{StaticResource GlowButtonStyle}" Background="#1A1A1A" Foreground="#888"
                                 FontWeight="SemiBold" Cursor="Hand"
                                 Click="ConsoleTab_Click"/>
                         <!-- Process Selector + Connection Status -->
@@ -184,47 +220,152 @@
                         <TextBlock x:Name="ConnectionStatusTxt" Text="Disconnected"
                                    Foreground="#888" FontSize="11" Margin="15,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
+                    </Border>
 
                     <!-- Autocomplete Popup (floating above editor) -->
                     <Popup x:Name="SuggestionPopup" Grid.Row="1"
                            PlacementTarget="{Binding ElementName=CodeEditor}"
-                           Placement="Bottom" StaysOpen="False"
+                           Placement="Relative" StaysOpen="False"
                            AllowsTransparency="True" PopupAnimation="Slide">
                         <Border Background="#1E1E1E" BorderBrush="#A020F0" BorderThickness="1"
                                 CornerRadius="4" Padding="2">
                             <ListBox x:Name="SuggestionListBox"
                                      Background="Transparent" Foreground="#E0E0E0"
                                      BorderThickness="0" FontFamily="Consolas" FontSize="12"
-                                     MaxHeight="200" MinWidth="180"
-                                     MouseDoubleClick="SuggestionListBox_MouseDoubleClick"/>
+                                     MaxHeight="200" MinWidth="220"
+                                     MouseDoubleClick="SuggestionListBox_MouseDoubleClick">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="4,3">
+                                            <TextBlock Text="{Binding Name}" Foreground="#EDE9FF" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding Description}" Foreground="#9CB0DA" FontSize="11" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </Border>
                     </Popup>
 
                     <!-- Editor / Console panels -->
-                    <TextBox x:Name="CodeEditor" Grid.Row="2"
-                             Background="#121212" Foreground="#E0E0E0"
-                             BorderBrush="#2A2A2A" BorderThickness="0"
-                             FontFamily="Consolas" FontSize="13"
-                             AcceptsReturn="True" AcceptsTab="True"
-                             VerticalScrollBarVisibility="Auto"
-                             TextWrapping="NoWrap"
-                             Padding="15,10"
-                             Visibility="Visible"
-                             TextChanged="CodeEditor_TextChanged"
-                             PreviewTextInput="CodeEditor_PreviewTextInput"/>
+                    <Border x:Name="EditorPanel" Grid.Row="2" CornerRadius="18" Margin="10,6,10,12" BorderBrush="#725595C4" BorderThickness="1.2">
+                        <Border.Background>
+                            <StaticResource ResourceKey="EditorAnimatedBackgroundBrush"/>
+                        </Border.Background>
+                        <Border.Effect>
+                            <DropShadowEffect Color="#6A2CB6" BlurRadius="20" ShadowDepth="0" Opacity="0.42"/>
+                        </Border.Effect>
+                        <Border.Triggers>
+                            <EventTrigger RoutedEvent="Border.Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                        <DoubleAnimation Storyboard.TargetProperty="Background.(LinearGradientBrush.GradientStops)[0].Offset"
+                                                         From="-0.15" To="0.35" Duration="0:0:8"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="Background.(LinearGradientBrush.GradientStops)[1].Offset"
+                                                         From="0.3" To="0.8" Duration="0:0:8"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="Background.(LinearGradientBrush.GradientStops)[2].Offset"
+                                                         From="0.9" To="1.15" Duration="0:0:8"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Border.Triggers>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="#2A1A45" CornerRadius="10" Margin="8,6,8,4" Padding="8,4">
+                                <TextBlock x:Name="PinnedScopeText" Text="Scope: Global"
+                                           Foreground="#DCCBFF" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"/>
+                            </Border>
+                            <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="44"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="120"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Background="#3010152A" BorderBrush="#443A4A71" BorderThickness="0,0,1,0">
+                                <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden">
+                                    <TextBlock x:Name="LineNumbersText"
+                                               Foreground="#6E84B4"
+                                               FontFamily="Consolas"
+                                               FontSize="12"
+                                               TextAlignment="Right"
+                                               Padding="0,12,8,0"
+                                               Text="1"/>
+                                </ScrollViewer>
+                            </Border>
+                            <TextBox x:Name="CodeEditor" Grid.Column="1"
+                                     Background="Transparent" Foreground="#F3F0FF"
+                                     CaretBrush="#FFFFFF"
+                                     BorderThickness="0"
+                                     FontFamily="Consolas" FontSize="13"
+                                     AcceptsReturn="True" AcceptsTab="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     TextWrapping="NoWrap"
+                                     Padding="12,10"
+                                     Visibility="Visible"
+                                     TextChanged="CodeEditor_TextChanged"
+                                     Loaded="CodeEditor_Loaded"
+                                     SelectionChanged="CodeEditor_SelectionChanged"
+                                     PreviewTextInput="CodeEditor_PreviewTextInput"
+                                     PreviewKeyDown="CodeEditor_PreviewKeyDown"/>
+                            <Border Grid.Column="2" Margin="6,0,6,0" Background="#20172634" CornerRadius="8" BorderBrush="#4D5B73A6" BorderThickness="1">
+                                <TextBox x:Name="MiniMapPreview"
+                                         IsReadOnly="True"
+                                         Background="Transparent"
+                                         Foreground="#8EA0C7"
+                                         BorderThickness="0"
+                                         FontFamily="Consolas"
+                                         FontSize="5.8"
+                                         TextWrapping="NoWrap"
+                                         VerticalScrollBarVisibility="Hidden"
+                                         HorizontalScrollBarVisibility="Hidden"
+                                         IsHitTestVisible="False"
+                                         Padding="3,4"/>
+                            </Border>
+                            </Grid>
+                        </Grid>
+                    </Border>
 
-                    <RichTextBox x:Name="ConsoleOutput" Grid.Row="2"
-                                 Background="#121212" Foreground="#E0E0E0"
-                                 BorderThickness="0"
-                                 FontFamily="Consolas" FontSize="12"
-                                 IsReadOnly="True"
-                                 VerticalScrollBarVisibility="Auto"
-                                 Padding="15,10"
-                                 Visibility="Collapsed"/>
+                    <Border x:Name="ThemePanel" Grid.Row="2" Margin="10,6,10,12" Visibility="Collapsed"
+                            Background="#D0101220" CornerRadius="18" BorderBrush="#5A607FA6" BorderThickness="1">
+                        <StackPanel Margin="16">
+                            <TextBlock Text="Theme Presets" Foreground="#E6E6FF" FontSize="18" FontWeight="Bold"/>
+                            <TextBlock Text="Pick a color style for the whole menu accent." Foreground="#9AA4C5" Margin="0,6,0,14"/>
+                            <CheckBox x:Name="RealtimeHelperToggle" Content="Enable realtime code helper"
+                                      Foreground="#DDE9FF" IsChecked="True" Margin="0,0,0,10"
+                                      Checked="RealtimeHelperToggle_Changed" Unchecked="RealtimeHelperToggle_Changed"/>
+                            <TextBlock x:Name="SyntaxStatusText" Text="Syntax status: Ready"
+                                       Foreground="#9CD9A7" FontSize="11" Margin="0,0,0,12"/>
+                            <WrapPanel>
+                                <Button Content="Default" Tag="Default" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
+                                <Button Content="Ocean" Tag="Ocean" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
+                                <Button Content="Sunset" Tag="Sunset" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
+                                <Button Content="Forest" Tag="Forest" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Margin="10,6,10,12" CornerRadius="18" BorderBrush="#6577A6D1" BorderThickness="1.1" Visibility="{Binding Visibility, ElementName=ConsoleOutput}">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#111726" Offset="0"/>
+                                <GradientStop Color="#16122B" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <RichTextBox x:Name="ConsoleOutput"
+                                     Background="Transparent" Foreground="#DDE9FF"
+                                     BorderThickness="0"
+                                     FontFamily="Consolas" FontSize="12"
+                                     IsReadOnly="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     Padding="15,10"
+                                     Visibility="Collapsed"/>
+                    </Border>
 
                     <!-- Floating action bar -->
-                    <Border Grid.Row="2" Background="#AA1A1A1A"
-                            CornerRadius="8" Padding="8,4"
+                    <Border Grid.Row="2" Background="#CC101522"
+                            CornerRadius="16" Padding="10,6"
                             HorizontalAlignment="Center" VerticalAlignment="Bottom"
                             Margin="0,0,0,12" MaxWidth="300">
                         <Border.Effect>
@@ -235,13 +376,16 @@
                                     Click="ClearEditor_Click">
                                 <fa:IconBlock Icon="Trash" Width="16" Height="16"/>
                             </Button>
-                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Edit" Margin="3">
+                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Clear Console" Margin="3" Click="ClearConsole_Click">
+                                <fa:IconBlock Icon="Eraser" Width="16" Height="16"/>
+                            </Button>
+                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Edit" Margin="3" Click="FormatEditor_Click">
                                 <fa:IconBlock Icon="Edit" Width="16" Height="16"/>
                             </Button>
-                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Paste" Margin="3">
+                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Paste" Margin="3" Click="PasteEditor_Click">
                                 <fa:IconBlock Icon="Paste" Width="16" Height="16"/>
                             </Button>
-                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Copy" Margin="3">
+                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Copy" Margin="3" Click="CopyEditor_Click">
                                 <fa:IconBlock Icon="Copy" Width="16" Height="16"/>
                             </Button>
                             <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Execute"
@@ -253,21 +397,22 @@
                     </Border>
                 </Grid>
 
-                <!-- RIGHT VERTICAL TOOLBAR -->
-                <Border Grid.Column="2" Background="#1A1A1A" CornerRadius="0,10,10,0"
-                        Width="60" Padding="0,15,0,0">
-                    <StackPanel HorizontalAlignment="Center">
-                        <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Code" Margin="0,8">
-                            <fa:IconBlock Icon="Code" Width="20" Height="20"/>
-                        </Button>
-                        <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Search" Margin="0,8">
-                            <fa:IconBlock Icon="Search" Width="20" Height="20"/>
-                        </Button>
-                        <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Settings" Margin="0,8">
-                            <fa:IconBlock Icon="Gear" Width="20" Height="20"/>
-                        </Button>
-                    </StackPanel>
-                </Border>
+                <!-- RIGHT FLOATING TABS -->
+                <StackPanel Grid.Column="2" Margin="14,120,12,0" VerticalAlignment="Top">
+                    <Border Background="#C0080B17" CornerRadius="16" Padding="8" BorderBrush="#553A3F65" BorderThickness="1" Width="62">
+                        <StackPanel>
+                    <Button x:Name="EditorTabBtnRight" Style="{StaticResource GlowButtonStyle}" ToolTip="Editor" Margin="0,0,0,10" Width="44" Height="40" Click="EditorTab_Click">
+                        <fa:IconBlock Icon="Code" Width="20" Height="20"/>
+                    </Button>
+                    <Button x:Name="ConsoleTabBtnRight" Style="{StaticResource GlowButtonStyle}" ToolTip="Console" Margin="0,0,0,10" Width="44" Height="40" Click="ConsoleTab_Click">
+                        <fa:IconBlock Icon="Terminal" Width="20" Height="20"/>
+                    </Button>
+                    <Button x:Name="SettingsTabBtn" Style="{StaticResource GlowButtonStyle}" ToolTip="Theme Settings" Width="44" Height="40" Click="SettingsTab_Click">
+                        <fa:IconBlock Icon="Gear" Width="20" Height="20"/>
+                    </Button>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
             </Grid>
         </Border>
 
