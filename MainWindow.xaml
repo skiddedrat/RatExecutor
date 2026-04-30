@@ -219,6 +219,8 @@
                         </Button>
                         <TextBlock x:Name="ConnectionStatusTxt" Text="Disconnected"
                                    Foreground="#888" FontSize="11" Margin="15,0,0,0" VerticalAlignment="Center"/>
+                        <Button x:Name="LaunchRobloxBtn" Content="Launch Roblox" Margin="12,0,0,0"
+                                Style="{StaticResource GlowButtonStyle}" Click="LaunchRoblox_Click"/>
                     </StackPanel>
                     </Border>
 
@@ -347,7 +349,7 @@
                             <CheckBox x:Name="RealtimeHelperToggle" Content="Enable realtime code helper"
                                       Foreground="#DDE9FF" IsChecked="True" Margin="0,0,0,10"
                                       Checked="RealtimeHelperToggle_Changed" Unchecked="RealtimeHelperToggle_Changed"/>
-                            <TextBlock Text="Syntax checks run while you type when helper is enabled."
+                            <TextBlock x:Name="SyntaxStatusText" Text="Syntax status: Ready"
                                        Foreground="#9CD9A7" FontSize="11" Margin="0,0,0,12"/>
                             <WrapPanel>
                                 <Button Content="Default" Tag="Default" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>

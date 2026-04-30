@@ -131,6 +131,31 @@ namespace ScriptExecutorUI
                 AppendConsole($"Selected PID: {_selectedPid}\n", Colors.Cyan);
             }
         }
+
+        private void LaunchRoblox_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "roblox://",
+                    UseShellExecute = true
+                });
+                AppendConsole("[Info] Launching Roblox...
+", Colors.LightSkyBlue);
+            }
+            catch (Exception ex)
+            {
+                AppendConsole($"[Warn] Could not launch Roblox protocol: {ex.Message}. Opening Roblox website instead.
+", Colors.Orange);
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://www.roblox.com/home",
+                    UseShellExecute = true
+                });
+            }
+        }
+
         private void DetectRobloxAndConnection()
         {
             try
