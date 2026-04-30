@@ -423,10 +423,49 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                <Border Grid.Row="0" Background="#2A1A45" CornerRadius="10" Margin="8,6,8,4" Padding="8,4">
-                                    <TextBlock x:Name="PinnedScopeText" Text="Scope: Global"
-                                               Foreground="#DCCBFF" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"/>
-                                </Border>
+                                <Grid Grid.Row="0" Margin="8,6,8,4">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" Background="#2A1A45" CornerRadius="10" Padding="8,4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock x:Name="PinnedScopeText" Text="Scope: Global"
+                                                       Foreground="#DCCBFF" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"/>
+                                            <Button Grid.Column="1" Content="+ Tab" Margin="8,0,0,0" Padding="8,2"
+                                                    Style="{StaticResource GlowButtonStyle}" Click="AddEditorTab_Click"/>
+                                        </Grid>
+                                    </Border>
+                                    <StackPanel Grid.Row="1" Margin="0,6,0,0">
+                                        <ScrollViewer x:Name="EditorTabsScrollViewer"
+                                                      HorizontalScrollBarVisibility="Hidden"
+                                                      VerticalScrollBarVisibility="Disabled"
+                                                      ScrollChanged="EditorTabsScrollViewer_ScrollChanged">
+                                            <ItemsControl x:Name="EditorTabsList">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Content="{Binding Title}" Margin="0,0,6,0" Padding="10,3"
+                                                                Click="EditorTabItem_Click"
+                                                                Tag="{Binding}"
+                                                                Style="{StaticResource GlowButtonStyle}"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                        <Slider x:Name="EditorTabsSlider" Minimum="0" Maximum="0" Value="0"
+                                                Margin="0,5,0,0" Height="16"
+                                                ValueChanged="EditorTabsSlider_ValueChanged"/>
+                                    </StackPanel>
+                                </Grid>
                                 <Grid Grid.Row="1">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="56"/>

@@ -28,6 +28,11 @@ namespace ScriptExecutorUI
             public string DocumentationUrl { get; set; }
             public override string ToString() => Name;
         }
+        private sealed class EditorTabState
+        {
+            public string Title { get; set; }
+            public string Content { get; set; } = string.Empty;
+        }
 
         public ObservableCollection<AccordionSection> Sections { get; set; } = new ObservableCollection<AccordionSection>();
         private uint _selectedPid = 0;
@@ -40,6 +45,10 @@ namespace ScriptExecutorUI
         private string _lastText = "";
         private int _lastCaretIndex = 0;
         private readonly object _syncLock = new object();
+        private readonly ObservableCollection<EditorTabState> _editorTabs = new ObservableCollection<EditorTabState>();
+        private EditorTabState _activeEditorTab;
+        private bool _isSwitchingTabs;
+        private const int MaxEditorTabs = 100;
 
         private double MeasureSpaceWidth()
         {
@@ -119,6 +128,74 @@ namespace ScriptExecutorUI
             SynapseZAPI2.SessionRemoved += OnSessionRemoved;
             SynapseZAPI2.SessionOutput += OnSessionOutput;
             DetectRobloxAndConnection();
+            InitializeEditorTabs();
+        }
+
+        private void InitializeEditorTabs()
+        {
+            EditorTabsList.ItemsSource = _editorTabs;
+            AddNewEditorTab();
+        }
+
+        private void AddEditorTab_Click(object sender, RoutedEventArgs e) => AddNewEditorTab();
+
+        private void AddNewEditorTab()
+        {
+            if (_editorTabs.Count >= MaxEditorTabs)
+            {
+                AppendConsole("[Warn] Maximum of 100 tabs reached.\n", Colors.Orange);
+                return;
+            }
+
+            PersistActiveEditorTab();
+            var tab = new EditorTabState { Title = $"Untitled-{_editorTabs.Count + 1}" };
+            _editorTabs.Add(tab);
+            ActivateEditorTab(tab);
+        }
+
+        private void EditorTabItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is EditorTabState tab)
+                ActivateEditorTab(tab);
+        }
+
+        private void ActivateEditorTab(EditorTabState tab)
+        {
+            PersistActiveEditorTab();
+            _activeEditorTab = tab;
+            _isSwitchingTabs = true;
+            CodeEditor.Text = tab.Content ?? string.Empty;
+            _isSwitchingTabs = false;
+            CodeEditor.CaretIndex = CodeEditor.Text.Length;
+            UpdateEditorTabSlider();
+        }
+
+        private void PersistActiveEditorTab()
+        {
+            if (_activeEditorTab != null)
+                _activeEditorTab.Content = CodeEditor.Text ?? string.Empty;
+        }
+
+        private void UpdateEditorTabSlider()
+        {
+            if (EditorTabsScrollViewer == null || EditorTabsSlider == null)
+                return;
+            var max = Math.Max(0, EditorTabsScrollViewer.ExtentWidth - EditorTabsScrollViewer.ViewportWidth);
+            EditorTabsSlider.Maximum = max;
+            if (EditorTabsSlider.Value > max)
+                EditorTabsSlider.Value = max;
+        }
+
+        private void EditorTabsSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            EditorTabsScrollViewer?.ScrollToHorizontalOffset(e.NewValue);
+        }
+
+        private void EditorTabsScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            UpdateEditorTabSlider();
+            if (EditorTabsSlider != null && Math.Abs(EditorTabsSlider.Value - e.HorizontalOffset) > 0.5)
+                EditorTabsSlider.Value = e.HorizontalOffset;
         }
 
         private void LoadAccordionData()
@@ -359,6 +436,8 @@ namespace ScriptExecutorUI
             
         private void CodeEditor_TextChanged(object sender, TextChangedEventArgs e)
         {
+            if (!_isSwitchingTabs && _activeEditorTab != null)
+                _activeEditorTab.Content = CodeEditor.Text ?? string.Empty;
             UpdateLineNumbers();
             UpdateMiniMap();
             UpdateCaretPosition();
