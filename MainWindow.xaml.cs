@@ -319,12 +319,51 @@ namespace ScriptExecutorUI
             AppendConsole("[Info] Replaced tabs with spaces.\n", Colors.LightSkyBlue);
         }
 
+
+        private static bool IsCaretInsideString(string text, int caret)
+        {
+            bool inString = false;
+            char quote = '\0';
+            bool escaped = false;
+            for (int i = 0; i < Math.Min(caret, text.Length); i++)
+            {
+                var c = text[i];
+                if (escaped)
+                {
+                    escaped = false;
+                    continue;
+                }
+
+                if (c == '\\')
+                {
+                    escaped = true;
+                    continue;
+                }
+
+                if (!inString && (c == '"' || c == '''))
+                {
+                    inString = true;
+                    quote = c;
+                    continue;
+                }
+
+                if (inString && c == quote)
+                {
+                    inString = false;
+                    quote = '\0';
+                }
+            }
+
+            return inString;
+        }
+
         private void CodeEditor_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             UpdateLineNumbers();
             UpdateMiniMap();
             UpdatePinnedScope();
             ValidateBasicSyntax();
+            ApplyEditorKeywordTint();
             if (!_isRealtimeHelperEnabled)
             {
                 SuggestionPopup.IsOpen = false;
@@ -346,7 +385,7 @@ namespace ScriptExecutorUI
             }
 
             var token = text.Substring(start, caret - start);
-            if (token.Length < 1)
+            if (token.Length < 1 || IsCaretInsideString(text, caret))
             {
                 SuggestionPopup.IsOpen = false;
                 return;
@@ -626,6 +665,28 @@ namespace ScriptExecutorUI
             }
 
             PinnedScopeText.Text = "Scope: Global";
+        }
+
+        private void ApplyEditorKeywordTint()
+        {
+            var caret = CodeEditor.CaretIndex;
+            var text = CodeEditor.Text;
+            var lineStart = text.LastIndexOf('
+', Math.Max(0, caret - 1));
+            lineStart = lineStart == -1 ? 0 : lineStart + 1;
+            var lineEnd = text.IndexOf('
+', caret);
+            if (lineEnd == -1) lineEnd = text.Length;
+            var line = text.Substring(lineStart, Math.Max(0, lineEnd - lineStart)).TrimStart();
+
+            if (line.StartsWith("function ", StringComparison.OrdinalIgnoreCase) || line.StartsWith("local ", StringComparison.OrdinalIgnoreCase))
+                CodeEditor.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x8C, 0x8C));
+            else if (line.StartsWith("if ", StringComparison.OrdinalIgnoreCase) || line.StartsWith("for ", StringComparison.OrdinalIgnoreCase) || line.StartsWith("while ", StringComparison.OrdinalIgnoreCase))
+                CodeEditor.Foreground = new SolidColorBrush(Color.FromRgb(0x87, 0xCE, 0xFA));
+            else if (IsCaretInsideString(text, caret))
+                CodeEditor.Foreground = new SolidColorBrush(Color.FromRgb(0xA8, 0xE6, 0xA3));
+            else
+                CodeEditor.Foreground = new SolidColorBrush(Color.FromRgb(0xF3, 0xF0, 0xFF));
         }
 
         private void ValidateBasicSyntax()
