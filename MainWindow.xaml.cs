@@ -1,6 +1,7 @@
 #nullable disable
 using SynapseZ;
 using Microsoft.Win32;
+using IOPath = System.IO.Path;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -251,7 +252,7 @@ namespace ScriptExecutorUI
             if (SavedFilesList.SelectedItem is not string filePath || !File.Exists(filePath))
                 return;
 
-            var result = MessageBox.Show($"Open file '{Path.GetFileName(filePath)}' in a new tab? ", "Open saved file ", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var result = MessageBox.Show($"Open file '{IOPath.GetFileName(filePath)}' in a new tab? ", "Open saved file ", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result != MessageBoxResult.Yes)
                 return;
 
@@ -264,7 +265,7 @@ namespace ScriptExecutorUI
             PersistActiveEditorTab();
             var tab = new EditorTabState
             {
-                Title = Path.GetFileName(filePath),
+                Title = IOPath.GetFileName(filePath),
                 Content = File.ReadAllText(filePath)
             };
             _editorTabs.Add(tab);
