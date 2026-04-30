@@ -30,7 +30,17 @@ namespace ScriptExecutorUI
             "debug.getconstants", "setthreadidentity", "getthreadidentity", "setclipboard",
             "rconsoleshow", "rconsoleprint", "rconsolewarn", "rconsoleerr", "WebSocket.connect",
             "function", "local", "if", "then", "elseif", "else", "for", "while", "repeat", "until",
-            "pcall", "xpcall", "pairs", "ipairs", "table.insert", "table.remove", "task.wait", "task.spawn"
+            "pcall", "xpcall", "pairs", "ipairs", "table.insert", "table.remove", "task.wait", "task.spawn",
+            "game:GetService", "workspace", "game.Players", "game.ReplicatedStorage", "game.ServerStorage",
+            "game:GetService(\"Players\")", "game:GetService(\"TweenService\")", "game:GetService(\"RunService\")",
+            "game:GetService(\"UserInputService\")", "game:GetService(\"ReplicatedStorage\")",
+            "Instance.new", "Vector3.new", "CFrame.new", "UDim2.new", "Color3.fromRGB",
+            "math.clamp", "math.floor", "math.random", "string.format", "string.split",
+            "table.find", "table.clear", "task.delay", "task.defer", "task.cancel",
+            "RemoteEvent:FireServer", "RemoteEvent:FireClient", "RemoteEvent:FireAllClients",
+            "RemoteFunction:InvokeServer", "RunService.Heartbeat:Connect", "RunService.RenderStepped:Connect",
+            "Players.PlayerAdded:Connect", "CharacterAdded:Connect", "Touched:Connect", "Changed:Connect",
+            "Humanoid", "Animator", "TweenInfo.new", "Enum", "RaycastParams.new", "workspace:Raycast"
         };
 
         public MainWindow()
@@ -323,6 +333,13 @@ namespace ScriptExecutorUI
 
         private void CodeEditor_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            if (e.Key == Key.Enter && !SuggestionPopup.IsVisible)
+            {
+                HandleAutoIndentEnter();
+                e.Handled = true;
+                return;
+            }
+
             if (!SuggestionPopup.IsVisible)
             {
                 _enterSuggestionArmed = 0;
@@ -392,6 +409,32 @@ namespace ScriptExecutorUI
             SuggestionPopup.Placement = PlacementMode.Relative;
             SuggestionPopup.HorizontalOffset = Math.Max(12, caretRect.X + 8);
             SuggestionPopup.VerticalOffset = Math.Max(16, caretRect.Y + caretRect.Height + 6);
+        }
+
+        private void HandleAutoIndentEnter()
+        {
+            var caret = CodeEditor.CaretIndex;
+            var text = CodeEditor.Text;
+
+            var lineStart = text.LastIndexOf('\n', Math.Max(0, caret - 1));
+            lineStart = lineStart == -1 ? 0 : lineStart + 1;
+            var currentLine = text.Substring(lineStart, caret - lineStart);
+
+            var currentIndent = new string(currentLine.TakeWhile(char.IsWhiteSpace).ToArray());
+            var trimmed = currentLine.TrimEnd();
+
+            bool opensBlock =
+                trimmed.EndsWith("then", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.EndsWith("do", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.EndsWith("function", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.EndsWith("repeat", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.EndsWith("{", StringComparison.OrdinalIgnoreCase);
+
+            var extraIndent = opensBlock ? "    " : string.Empty;
+            var insert = "\n" + currentIndent + extraIndent;
+
+            CodeEditor.Text = text.Insert(caret, insert);
+            CodeEditor.CaretIndex = caret + insert.Length;
         }
 
         private void SettingsTab_Click(object sender, RoutedEventArgs e)
