@@ -22,10 +22,8 @@
         </LinearGradientBrush>
 
         <!-- ═══════════════════════════════════════════
-             SLIM SCROLLBARS
-             WPF requires TWO separate styles for
-             vertical vs horizontal — a single style
-             with a Trigger cannot swap templates.
+             ABYSS REBORN
+             MADE BY LUCID.ID
         ════════════════════════════════════════════ -->
 
         <!-- Shared thumb -->
@@ -298,7 +296,7 @@
                 <!-- LEFT SIDEBAR -->
                 <Border Grid.Column="0" Margin="0,10,8,10" Background="#D0080B17" CornerRadius="18" Padding="18" BorderBrush="#553A3F65" BorderThickness="1.2">
                     <StackPanel Margin="0,15,0,0">
-                        <TextBlock Text="RAT EXECUTOR" FontSize="24" FontWeight="Bold"
+                        <TextBlock Text="Abyss Reborn" FontSize="24" FontWeight="Bold"
                                    Foreground="{StaticResource NeonPurple}" Margin="4,0,0,4"/>
                         <ItemsControl x:Name="AccordionItems">
                             <ItemsControl.ItemTemplate>
@@ -336,7 +334,6 @@
                     </Grid.RowDefinitions>
 
                     <!-- Tab Header -->
-                    <!-- FIX: Named EditorTabBtn and ConsoleTabBtn here so C# can find them -->
                     <Border Grid.Row="0" Margin="10,0,10,6" Background="#50161E35" CornerRadius="14" Padding="8,6" BorderBrush="#3B4B5E91" BorderThickness="1">
                         <StackPanel Orientation="Horizontal">
                             <Button x:Name="EditorTabBtn" Content="Editor" Width="80" Height="28"
@@ -362,9 +359,6 @@
 
                     <!-- Editor / Console / Theme panels — Row 1 fills remaining space -->
                     <Grid Grid.Row="1">
-
-                        <!-- FIX: Popup moved INSIDE the editor Grid so PlacementTarget=CodeEditor resolves
-                             correctly within the same visual scope. Placement=RelativePoint is correct. -->
                         <Popup x:Name="SuggestionPopup"
                                PlacementTarget="{Binding ElementName=CodeEditor}"
                                Placement="RelativePoint"
@@ -435,7 +429,7 @@
                                 </Border>
                                 <Grid Grid.Row="1">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="44"/>
+                                        <ColumnDefinition Width="56"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="120"/>
                                     </Grid.ColumnDefinitions>
@@ -446,18 +440,14 @@
                                                    FontFamily="Consolas"
                                                    FontSize="13"
                                                    TextAlignment="Right"
-                                                   Padding="0,10,8,0"
+                                                   Padding="0,10,16,0"
                                                    Text="1"/>
                                         </ScrollViewer>
                                     </Border>
 
-                                    <!-- SyntaxOverlay sits behind CodeEditor, identical layout -->
-                                    <!-- Column stretches to fill all available width.
-                                         Both controls are identical in size/font/margin
-                                         so the coloured overlay sits pixel-perfect behind
-                                         the transparent-text editor. -->
+                                    
                                     <Grid Grid.Column="1" HorizontalAlignment="Stretch" TextOptions.TextFormattingMode="Display">
-                                        <!-- Overlay Layer -->
+                                        <!-- 1. Syntax Overlay (colored text, read-only) -->
                                         <RichTextBox x:Name="SyntaxOverlay"
                                                  IsReadOnly="True"
                                                  IsHitTestVisible="False"
@@ -476,32 +466,45 @@
                                             </RichTextBox.Template>
                                         </RichTextBox>
 
-                                        <!-- Input Layer -->
+                                        <!-- 2. (user types here) -->
                                         <TextBox x:Name="CodeEditor"
-                                                 Background="Transparent"
-                                                 Foreground="Transparent"
-                                                 CaretBrush="White"
-                                                 SelectionBrush="#5050A0FF"
-                                                 BorderThickness="0"
-                                                 Margin="12,10,12,10"
-                                                 Padding="0"
-                                                 FontFamily="Consolas"
-                                                 FontSize="13"
-                                                 AcceptsReturn="True"
-                                                 AcceptsTab="True"
-                                                 TextChanged="CodeEditor_TextChanged"
-                                                 Loaded="CodeEditor_Loaded"
-                                                 SelectionChanged="CodeEditor_SelectionChanged"
-                                                 PreviewTextInput="CodeEditor_PreviewTextInput"
-                                                 PreviewKeyDown="CodeEditor_PreviewKeyDown">
+                                             Background="Transparent"
+                                             Foreground="Transparent"
+                                             CaretBrush="Transparent" 
+                                             SelectionBrush="#5050A0FF"
+                                             BorderThickness="0"
+                                             Margin="12,10,12,10"
+                                             Padding="0"
+                                             FontFamily="Consolas"
+                                             FontSize="13"
+                                             AcceptsReturn="True"
+                                             AcceptsTab="True"
+                                             VerticalScrollBarVisibility="Auto"
+                                             HorizontalScrollBarVisibility="Auto"
+                                             TextChanged="CodeEditor_TextChanged"
+                                             Loaded="CodeEditor_Loaded"
+                                             SelectionChanged="CodeEditor_SelectionChanged"
+                                             PreviewTextInput="CodeEditor_PreviewTextInput"
+                                             PreviewKeyDown="CodeEditor_PreviewKeyDown">
                                             <TextBox.Template>
                                                 <ControlTemplate TargetType="TextBox">
-                                                    <ScrollViewer x:Name="PART_ContentHost" Padding="0" Margin="0"
-                              HorizontalScrollBarVisibility="Auto"
-                              VerticalScrollBarVisibility="Auto"/>
+                                                    <ScrollViewer x:Name="PART_ContentHost" Padding="0" Margin="0"/>
                                                 </ControlTemplate>
                                             </TextBox.Template>
                                         </TextBox>
+
+                                    
+                                        <!-- Tab Guides Canvas -->
+                                        <Canvas x:Name="TabGuideCanvas" Panel.ZIndex="1">
+                                            <!-- Will be populated in code -->
+                                        </Canvas>
+                                        <Canvas>
+                                            <Rectangle x:Name="CaretOverlay"
+                                               Fill="#ffffff"
+                                               Width="1"
+                                               Visibility="Collapsed"
+                                               Panel.ZIndex="100"/>
+                                        </Canvas>
                                     </Grid>
 
                                     <Border Grid.Column="2" Margin="6,0,6,0" Background="#20172634" CornerRadius="8" BorderBrush="#4D5B73A6" BorderThickness="1">
@@ -600,7 +603,6 @@
                 <StackPanel Grid.Column="2" Margin="14,120,12,0" VerticalAlignment="Top">
                     <Border Background="#C0080B17" CornerRadius="16" Padding="8" BorderBrush="#553A3F65" BorderThickness="1" Width="62">
                         <StackPanel>
-                            <!-- FIX: Renamed to match what C# code references -->
                             <Button x:Name="EditorTabBtnRight" Style="{StaticResource GlowButtonStyle}" ToolTip="Editor" Margin="0,0,0,10" Width="44" Height="40" Click="EditorTab_Click">
                                 <fa:IconBlock Icon="Code" Width="20" Height="20"/>
                             </Button>
