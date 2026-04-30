@@ -313,16 +313,6 @@ namespace ScriptExecutorUI
                 Clipboard.SetText(CodeEditor.Text);
         }
 
-        private void PasteEditor_Click(object sender, RoutedEventArgs e)
-        {
-            if (Clipboard.ContainsText())
-            {
-                var caret = CodeEditor.CaretIndex;
-                CodeEditor.Text = CodeEditor.Text.Insert(caret, Clipboard.GetText());
-                CodeEditor.CaretIndex = caret + Clipboard.GetText().Length;
-            }
-        }
-
         private void FormatEditor_Click(object sender, RoutedEventArgs e)
         {
             CodeEditor.Text = CodeEditor.Text.Replace("\t", "    ");

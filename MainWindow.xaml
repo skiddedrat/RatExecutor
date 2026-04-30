@@ -394,9 +394,6 @@
                             <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Edit" Margin="3" Click="FormatEditor_Click">
                                 <fa:IconBlock Icon="Edit" Width="16" Height="16"/>
                             </Button>
-                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Paste" Margin="3" Click="PasteEditor_Click">
-                                <fa:IconBlock Icon="Paste" Width="16" Height="16"/>
-                            </Button>
                             <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Copy" Margin="3" Click="CopyEditor_Click">
                                 <fa:IconBlock Icon="Copy" Width="16" Height="16"/>
                             </Button>
