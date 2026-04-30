@@ -222,27 +222,39 @@
                     </StackPanel>
                     </Border>
 
-                    <!-- Autocomplete Popup (floating above editor) -->
+                    <!-- Autocomplete Popup (Roblox Studio-style) -->
                     <Popup x:Name="SuggestionPopup" Grid.Row="1"
                            PlacementTarget="{Binding ElementName=CodeEditor}"
                            Placement="Relative" StaysOpen="False"
                            AllowsTransparency="True" PopupAnimation="Slide">
-                        <Border Background="#1E1E1E" BorderBrush="#A020F0" BorderThickness="1"
-                                CornerRadius="4" Padding="2">
-                            <ListBox x:Name="SuggestionListBox"
-                                     Background="Transparent" Foreground="#E0E0E0"
-                                     BorderThickness="0" FontFamily="Consolas" FontSize="12"
-                                     MaxHeight="200" MinWidth="220"
-                                     MouseDoubleClick="SuggestionListBox_MouseDoubleClick">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Margin="4,3">
-                                            <TextBlock Text="{Binding Name}" Foreground="#EDE9FF" FontWeight="SemiBold"/>
-                                            <TextBlock Text="{Binding Description}" Foreground="#9CB0DA" FontSize="11" TextWrapping="Wrap"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                        <Border Background="#12141D" BorderBrush="#050607" BorderThickness="1" CornerRadius="2">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="250"/>
+                                    <ColumnDefinition Width="280"/>
+                                </Grid.ColumnDefinitions>
+                                <ListBox x:Name="SuggestionListBox" Grid.Column="0"
+                                         Background="#14161F" Foreground="#F0F0F0" BorderThickness="0"
+                                         FontFamily="Consolas" FontSize="15" MinHeight="120" MinWidth="250"
+                                         SelectionChanged="SuggestionListBox_SelectionChanged"
+                                         MouseDoubleClick="SuggestionListBox_MouseDoubleClick">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Margin="6,3">
+                                                <fa:IconBlock Icon="Cube" Width="12" Height="12" Foreground="#B367FF" Margin="0,0,6,0"/>
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <Border Grid.Column="1" Background="#0F1118" BorderBrush="#050607" BorderThickness="1,0,0,0" Padding="10,8">
+                                    <StackPanel>
+                                        <TextBlock x:Name="SuggestionSignatureText" Foreground="#DDE4F8" FontFamily="Consolas" FontSize="22" Text="" TextWrapping="Wrap"/>
+                                        <TextBlock x:Name="SuggestionDescriptionText" Foreground="#C7D4EA" FontSize="16" Margin="0,8,0,8" TextWrapping="Wrap"/>
+                                        <TextBlock x:Name="SuggestionDocsLink" Text="Open Documentation" Foreground="#63A5FF" Cursor="Hand" TextDecorations="Underline" MouseLeftButtonUp="SuggestionDocsLink_MouseLeftButtonUp"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
                         </Border>
                     </Popup>
 
@@ -273,24 +285,10 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <Grid Grid.Row="0" Margin="8,6,8,4">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Background="#2A1A45" CornerRadius="10" Padding="8,4" Margin="0,0,8,0">
-                                    <TextBlock x:Name="PinnedScopeText" Text="Scope: Global"
-                                               Foreground="#DCCBFF" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"/>
-                                </Border>
-                                <Border Grid.Column="1" Background="#241637" CornerRadius="10" Padding="8,4" BorderBrush="#5E4A7E" BorderThickness="1">
-                                    <StackPanel>
-                                        <TextBlock x:Name="SyntaxStatusText" Text="Syntax status: Ready"
-                                                   Foreground="#9CD9A7" FontSize="11" FontFamily="Consolas"/>
-                                        <TextBlock Text="Tip: Keep realtime helper on for syntax + suggestions."
-                                                   Foreground="#AFBCE0" FontSize="10"/>
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
+                            <Border Grid.Row="0" Background="#2A1A45" CornerRadius="10" Margin="8,6,8,4" Padding="8,4">
+                                <TextBlock x:Name="PinnedScopeText" Text="Scope: Global"
+                                           Foreground="#DCCBFF" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"/>
+                            </Border>
                             <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="44"/>
