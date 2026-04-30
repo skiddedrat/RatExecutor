@@ -25,13 +25,21 @@ namespace ScriptExecutorUI
             public string DocumentationUrl { get; set; }
             public override string ToString() => Name;
         }
+        private sealed class EditorTabItem
+        {
+            public string Title { get; set; }
+            public string Text { get; set; } = string.Empty;
+        }
 
         public ObservableCollection<AccordionSection> Sections { get; set; } = new ObservableCollection<AccordionSection>();
+        public ObservableCollection<EditorTabItem> EditorTabs { get; set; } = new ObservableCollection<EditorTabItem>();
         private uint _selectedPid = 0;
         private CancellationTokenSource _cts = null;
         private ScrollViewer _editorScrollViewer;
         private ScrollViewer _overlayScrollViewer;
         private bool _isRealtimeHelperEnabled = true;
+        private EditorTabItem _activeEditorTab;
+        private bool _isSwitchingTab;
         private readonly SuggestionItem[] _suncSuggestions =
         {
             new SuggestionItem { Name = "print", Signature = "print(...: T...) : ()", Description = "Prints all provided values to the output.", DocumentationUrl = "https://create.roblox.com/docs/reference/engine/globals/LuaGlobals#print" },
@@ -86,7 +94,9 @@ namespace ScriptExecutorUI
         public MainWindow()
         {
             InitializeComponent();
+            DataContext = this;
             LoadAccordionData();
+            InitializeEditorTabs();
             ApplyStaticGlowEffects();
             AppendConsole($"[Ready] Console initialized at {DateTime.Now:HH:mm:ss}\n", Colors.LightSkyBlue);
 
@@ -98,6 +108,16 @@ namespace ScriptExecutorUI
             SynapseZAPI2.SessionRemoved += OnSessionRemoved;
             SynapseZAPI2.SessionOutput += OnSessionOutput;
             DetectRobloxAndConnection();
+        }
+
+        private void InitializeEditorTabs()
+        {
+            EditorTabs.Clear();
+            var firstTab = new EditorTabItem { Title = "Untitled-1" };
+            EditorTabs.Add(firstTab);
+            _activeEditorTab = firstTab;
+            CodeEditor.Text = firstTab.Text;
+            UpdateTabsSlider();
         }
 
         private void LoadAccordionData()
@@ -299,6 +319,47 @@ namespace ScriptExecutorUI
             CodeEditor.Clear();
         }
 
+        private void AddTab_Click(object sender, RoutedEventArgs e)
+        {
+            if (EditorTabs.Count >= 100)
+            {
+                AppendConsole("[Warn] Maximum of 100 editor tabs reached.\n", Colors.Orange);
+                return;
+            }
+
+            var nextTab = new EditorTabItem { Title = $"Untitled-{EditorTabs.Count + 1}" };
+            EditorTabs.Add(nextTab);
+            SwitchToTab(nextTab);
+            UpdateTabsSlider();
+            TabsScrollSlider.Value = TabsScrollSlider.Maximum;
+        }
+
+        private void EditorTabHeader_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.DataContext is EditorTabItem tab)
+            {
+                SwitchToTab(tab);
+            }
+        }
+
+        private void SwitchToTab(EditorTabItem tab)
+        {
+            if (tab == null || tab == _activeEditorTab)
+                return;
+
+            if (_activeEditorTab != null)
+            {
+                _activeEditorTab.Text = CodeEditor.Text;
+            }
+
+            _activeEditorTab = tab;
+            _isSwitchingTab = true;
+            CodeEditor.Text = tab.Text ?? string.Empty;
+            _isSwitchingTab = false;
+            CodeEditor.CaretIndex = CodeEditor.Text.Length;
+            UpdateSyntaxHighlighting();
+        }
+
         private void ClearConsole_Click(object sender, RoutedEventArgs e)
         {
             var confirm = MessageBox.Show("Are you sure you want to clear console output?", "Clear console", MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -360,6 +421,11 @@ namespace ScriptExecutorUI
 
         private void CodeEditor_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
+            if (!_isSwitchingTab && _activeEditorTab != null)
+            {
+                _activeEditorTab.Text = CodeEditor.Text;
+            }
+
             UpdateLineNumbers();
             UpdateMiniMap();
             UpdatePinnedScope();
@@ -542,6 +608,7 @@ namespace ScriptExecutorUI
 
             _overlayScrollViewer = FindVisualChild<ScrollViewer>(SyntaxOverlay);
             UpdateSyntaxHighlighting();
+            UpdateTabsSlider();
         }
 
         private void EditorScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -553,6 +620,24 @@ namespace ScriptExecutorUI
                 _overlayScrollViewer.ScrollToHorizontalOffset(e.HorizontalOffset);
             }
             SyncMiniMapScroll(e);
+        }
+
+        private void UpdateTabsSlider()
+        {
+            if (TabsScrollSlider == null || EditorTabsScrollViewer == null)
+                return;
+
+            EditorTabsScrollViewer.UpdateLayout();
+            TabsScrollSlider.Minimum = 0;
+            TabsScrollSlider.Maximum = Math.Max(1, EditorTabsScrollViewer.ScrollableWidth);
+            TabsScrollSlider.Value = Math.Min(TabsScrollSlider.Maximum, EditorTabsScrollViewer.HorizontalOffset);
+        }
+
+        private void TabsScrollSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (EditorTabsScrollViewer == null)
+                return;
+            EditorTabsScrollViewer.ScrollToHorizontalOffset(e.NewValue);
         }
 
         private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject

@@ -285,10 +285,58 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <Border Grid.Row="0" Background="#2A1A45" CornerRadius="10" Margin="8,6,8,4" Padding="8,4">
-                                <TextBlock x:Name="PinnedScopeText" Text="Scope: Global"
-                                           Foreground="#DCCBFF" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"/>
-                            </Border>
+                            <Grid Grid.Row="0" Margin="8,6,8,4">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <DockPanel Grid.Row="0" LastChildFill="False">
+                                    <TextBlock x:Name="PinnedScopeText" Text="Scope: Global"
+                                               Foreground="#DCCBFF" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"
+                                               VerticalAlignment="Center"/>
+                                    <Button x:Name="AddTabBtn" Content="+"
+                                            Width="22" Height="20"
+                                            Margin="8,0,0,0"
+                                            HorizontalAlignment="Right"
+                                            Style="{StaticResource GlowButtonStyle}"
+                                            Click="AddTab_Click"/>
+                                </DockPanel>
+                                <Grid Grid.Row="1" Margin="0,6,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="120"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ScrollViewer x:Name="EditorTabsScrollViewer"
+                                                  Grid.Column="0"
+                                                  HorizontalScrollBarVisibility="Hidden"
+                                                  VerticalScrollBarVisibility="Disabled">
+                                        <ItemsControl x:Name="EditorTabsItemsControl" ItemsSource="{Binding EditorTabs}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="{Binding Title}"
+                                                            Margin="0,0,6,0"
+                                                            Padding="8,3"
+                                                            Click="EditorTabHeader_Click"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                    <Slider x:Name="TabsScrollSlider"
+                                            Grid.Column="1"
+                                            Minimum="0"
+                                            Maximum="1"
+                                            Value="0"
+                                            SmallChange="1"
+                                            LargeChange="10"
+                                            Margin="8,0,0,0"
+                                            ValueChanged="TabsScrollSlider_ValueChanged"/>
+                                </Grid>
+                            </Grid>
                             <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="44"/>
