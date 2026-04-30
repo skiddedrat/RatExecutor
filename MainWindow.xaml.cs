@@ -16,30 +16,66 @@ namespace ScriptExecutorUI
 {
     public partial class MainWindow : Window
     {
+        private sealed class SuggestionItem
+        {
+            public string Name { get; init; }
+            public string Description { get; init; }
+            public override string ToString() => Name;
+        }
+
         public ObservableCollection<AccordionSection> Sections { get; set; } = new ObservableCollection<AccordionSection>();
         private uint _selectedPid = 0;
         private CancellationTokenSource _cts = null;
         private ScrollViewer _editorScrollViewer;
-        private readonly string[] _suncSuggestions =
+        private readonly SuggestionItem[] _suncSuggestions =
         {
-            "print", "warn", "error", "getgenv", "getrenv", "getgc", "getinstances",
-            "getnilinstances", "getconnections", "hookfunction", "hookmetamethod",
-            "newcclosure", "checkcaller", "loadstring", "getsenv", "getloadedmodules",
-            "getrunningscripts", "getscriptbytecode", "debug.getinfo", "debug.getupvalues",
-            "debug.getconstants", "setthreadidentity", "getthreadidentity", "setclipboard",
-            "rconsoleshow", "rconsoleprint", "rconsolewarn", "rconsoleerr", "WebSocket.connect",
-            "function", "local", "if", "then", "elseif", "else", "for", "while", "repeat", "until",
-            "pcall", "xpcall", "pairs", "ipairs", "table.insert", "table.remove", "task.wait", "task.spawn",
-            "game:GetService", "workspace", "game.Players", "game.ReplicatedStorage", "game.ServerStorage",
-            "game:GetService(\"Players\")", "game:GetService(\"TweenService\")", "game:GetService(\"RunService\")",
-            "game:GetService(\"UserInputService\")", "game:GetService(\"ReplicatedStorage\")",
-            "Instance.new", "Vector3.new", "CFrame.new", "UDim2.new", "Color3.fromRGB",
-            "math.clamp", "math.floor", "math.random", "string.format", "string.split",
-            "table.find", "table.clear", "task.delay", "task.defer", "task.cancel",
-            "RemoteEvent:FireServer", "RemoteEvent:FireClient", "RemoteEvent:FireAllClients",
-            "RemoteFunction:InvokeServer", "RunService.Heartbeat:Connect", "RunService.RenderStepped:Connect",
-            "Players.PlayerAdded:Connect", "CharacterAdded:Connect", "Touched:Connect", "Changed:Connect",
-            "Humanoid", "Animator", "TweenInfo.new", "Enum", "RaycastParams.new", "workspace:Raycast"
+            new SuggestionItem { Name = "print()", Description = "Output text/value to console." },
+            new SuggestionItem { Name = "warn()", Description = "Output warning message." },
+            new SuggestionItem { Name = "error()", Description = "Throw an error and stop execution." },
+            new SuggestionItem { Name = "task.wait()", Description = "Yield current thread for duration." },
+            new SuggestionItem { Name = "task.spawn()", Description = "Run function asynchronously." },
+            new SuggestionItem { Name = "task.delay()", Description = "Run function after delay." },
+            new SuggestionItem { Name = "pairs()", Description = "Iterate key/value table pairs." },
+            new SuggestionItem { Name = "ipairs()", Description = "Iterate array-like table values." },
+            new SuggestionItem { Name = "pcall()", Description = "Call function in protected mode." },
+            new SuggestionItem { Name = "xpcall()", Description = "Protected call with custom handler." },
+            new SuggestionItem { Name = "game:GetService(\"Players\")", Description = "Get Players service." },
+            new SuggestionItem { Name = "game:GetService(\"RunService\")", Description = "Get RunService." },
+            new SuggestionItem { Name = "game:GetService(\"TweenService\")", Description = "Get TweenService." },
+            new SuggestionItem { Name = "game:GetService(\"ReplicatedStorage\")", Description = "Get shared storage service." },
+            new SuggestionItem { Name = "workspace", Description = "Top-level 3D world container." },
+            new SuggestionItem { Name = "Instance.new()", Description = "Create a new Roblox instance." },
+            new SuggestionItem { Name = "Vector3.new()", Description = "Create 3D vector value." },
+            new SuggestionItem { Name = "CFrame.new()", Description = "Create position/orientation frame." },
+            new SuggestionItem { Name = "UDim2.new()", Description = "Create 2D UI dimension." },
+            new SuggestionItem { Name = "Color3.fromRGB()", Description = "Create RGB color." },
+            new SuggestionItem { Name = "workspace:Raycast()", Description = "Cast ray into the world." },
+            new SuggestionItem { Name = "RaycastParams.new()", Description = "Configure raycast filters." },
+            new SuggestionItem { Name = "RemoteEvent:FireServer()", Description = "Send event from client to server." },
+            new SuggestionItem { Name = "RemoteFunction:InvokeServer()", Description = "Invoke remote function on server." },
+            new SuggestionItem { Name = "RunService.Heartbeat:Connect()", Description = "Run callback each frame heartbeat." },
+            new SuggestionItem { Name = "RunService.RenderStepped:Connect()", Description = "Run callback each render step." },
+            new SuggestionItem { Name = "Players.PlayerAdded:Connect()", Description = "Callback when player joins." },
+            new SuggestionItem { Name = "player.CharacterAdded:Connect()", Description = "Callback when character spawns." },
+            new SuggestionItem { Name = "part.Touched:Connect()", Description = "Callback when part is touched." },
+            new SuggestionItem { Name = "Instance.Changed:Connect()", Description = "Callback when property changes." },
+            new SuggestionItem { Name = "table.insert()", Description = "Insert value into table." },
+            new SuggestionItem { Name = "table.remove()", Description = "Remove value from table." },
+            new SuggestionItem { Name = "table.find()", Description = "Find value index in table." },
+            new SuggestionItem { Name = "string.split()", Description = "Split string by separator." },
+            new SuggestionItem { Name = "string.format()", Description = "Format string with placeholders." },
+            new SuggestionItem { Name = "math.clamp()", Description = "Clamp number to min/max." },
+            new SuggestionItem { Name = "math.floor()", Description = "Round down number." },
+            new SuggestionItem { Name = "math.random()", Description = "Generate random number." },
+            new SuggestionItem { Name = "TweenInfo.new()", Description = "Create tween configuration." },
+            new SuggestionItem { Name = "Humanoid:MoveTo()", Description = "Move humanoid to target point." },
+            new SuggestionItem { Name = "Humanoid.Jump = true", Description = "Trigger humanoid jump." },
+            new SuggestionItem { Name = "function", Description = "Declare a function block." },
+            new SuggestionItem { Name = "local", Description = "Declare local variable." },
+            new SuggestionItem { Name = "if then", Description = "Conditional logic block." },
+            new SuggestionItem { Name = "for do", Description = "Looping construct." },
+            new SuggestionItem { Name = "while do", Description = "While-loop construct." },
+            new SuggestionItem { Name = "repeat until", Description = "Repeat loop construct." }
         };
 
         public MainWindow()
@@ -292,9 +328,10 @@ namespace ScriptExecutorUI
             }
 
             var matches = _suncSuggestions
-                .Where(x => x.StartsWith(token, StringComparison.OrdinalIgnoreCase) || x.Contains(token, StringComparison.OrdinalIgnoreCase))
-                .Distinct()
-                .Take(10)
+                .Where(x => x.Name.StartsWith(token, StringComparison.OrdinalIgnoreCase) || x.Name.Contains(token, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(x => x.Name.StartsWith(token, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                .ThenBy(x => x.Name.Length)
+                .Take(12)
                 .ToList();
             if (matches.Count == 0)
             {
@@ -310,9 +347,9 @@ namespace ScriptExecutorUI
 
         private void SuggestionListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (SuggestionListBox.SelectedItem is string selected)
+            if (SuggestionListBox.SelectedItem is SuggestionItem selected)
             {
-                InsertSuggestion(selected);
+                InsertSuggestion(selected.Name);
             }
         }
 
@@ -376,14 +413,14 @@ namespace ScriptExecutorUI
                     SuggestionListBox.SelectedIndex--;
                 e.Handled = true;
             }
-            else if (e.Key == Key.Enter && SuggestionListBox.SelectedItem is string selectedSuggestion)
+            else if (e.Key == Key.Enter && SuggestionListBox.SelectedItem is SuggestionItem selectedSuggestion)
             {
-                InsertSuggestion(selectedSuggestion);
+                InsertSuggestion(selectedSuggestion.Name);
                 e.Handled = true;
             }
-            else if (e.Key == Key.Tab && SuggestionListBox.SelectedItem is string selected)
+            else if (e.Key == Key.Tab && SuggestionListBox.SelectedItem is SuggestionItem selected)
             {
-                InsertSuggestion(selected);
+                InsertSuggestion(selected.Name);
                 e.Handled = true;
             }
             else if (e.Key == Key.Escape)

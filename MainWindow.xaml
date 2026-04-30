@@ -233,7 +233,16 @@
                                      Background="Transparent" Foreground="#E0E0E0"
                                      BorderThickness="0" FontFamily="Consolas" FontSize="12"
                                      MaxHeight="200" MinWidth="220"
-                                     MouseDoubleClick="SuggestionListBox_MouseDoubleClick"/>
+                                     MouseDoubleClick="SuggestionListBox_MouseDoubleClick">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="4,3">
+                                            <TextBlock Text="{Binding Name}" Foreground="#EDE9FF" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding Description}" Foreground="#9CB0DA" FontSize="11" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </Border>
                     </Popup>
 
