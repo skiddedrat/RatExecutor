@@ -15,31 +15,58 @@
         <SolidColorBrush x:Key="NeonPurple" Color="#A020F0"/>
         <SolidColorBrush x:Key="SoftWhite" Color="#E0E0E0"/>
         <SolidColorBrush x:Key="AccentGreen" Color="#00FF7F"/>
+        <LinearGradientBrush x:Key="EditorAnimatedBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#101020" Offset="0.0"/>
+            <GradientStop Color="#14142A" Offset="0.45"/>
+            <GradientStop Color="#1F1235" Offset="1.0"/>
+        </LinearGradientBrush>
 
         <Style x:Key="GlowButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Background" Value="#1C1C2C"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Foreground" Value="{StaticResource SoftWhite}"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Setter.Value>
+            </Setter>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border x:Name="buttonBorder" Background="{TemplateBinding Background}" CornerRadius="12" BorderBrush="#3A2A5A" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="buttonBorder" Property="Background" Value="#2A2340"/>
+                                <Setter TargetName="buttonBorder" Property="BorderBrush" Value="#A020F0"/>
+                                <Setter TargetName="buttonBorder" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#A020F0" ShadowDepth="0" BlurRadius="18" Opacity="0.85"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="1.05" ScaleY="1.05"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="buttonBorder" Property="Background" Value="#351A5A"/>
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Effect">
-                        <Setter.Value>
-                            <DropShadowEffect Color="#A020F0" ShadowDepth="0" BlurRadius="12"/>
-                        </Setter.Value>
-                    </Setter>
-                    <Setter Property="Foreground" Value="#F0F0F0"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
 
         <Style x:Key="CloseButtonStyle" TargetType="Button">
@@ -118,7 +145,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="220"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="60"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- LEFT SIDEBAR -->
@@ -165,11 +192,11 @@
                     <!-- Tab Header -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,10,0,0">
                         <Button x:Name="EditorTabBtn" Content="Editor" Width="80" Height="28"
-                                Background="#222" Foreground="{StaticResource SoftWhite}"
+                                Style="{StaticResource GlowButtonStyle}" Background="#2A2340" Foreground="{StaticResource SoftWhite}"
                                 FontWeight="SemiBold" Cursor="Hand"
                                 Click="EditorTab_Click"/>
                         <Button x:Name="ConsoleTabBtn" Content="Console" Width="80" Height="28"
-                                Background="#1A1A1A" Foreground="#888"
+                                Style="{StaticResource GlowButtonStyle}" Background="#1A1A1A" Foreground="#888"
                                 FontWeight="SemiBold" Cursor="Hand"
                                 Click="ConsoleTab_Click"/>
                         <!-- Process Selector + Connection Status -->
@@ -201,17 +228,54 @@
                     </Popup>
 
                     <!-- Editor / Console panels -->
-                    <TextBox x:Name="CodeEditor" Grid.Row="2"
-                             Background="#121212" Foreground="#E0E0E0"
-                             BorderBrush="#2A2A2A" BorderThickness="0"
-                             FontFamily="Consolas" FontSize="13"
-                             AcceptsReturn="True" AcceptsTab="True"
-                             VerticalScrollBarVisibility="Auto"
-                             TextWrapping="NoWrap"
-                             Padding="15,10"
-                             Visibility="Visible"
-                             TextChanged="CodeEditor_TextChanged"
-                             PreviewTextInput="CodeEditor_PreviewTextInput"/>
+                    <Border x:Name="EditorPanel" Grid.Row="2" CornerRadius="14" Margin="10,6,10,12" BorderBrush="#392B5A" BorderThickness="1.2">
+                        <Border.Background>
+                            <StaticResource ResourceKey="EditorAnimatedBackgroundBrush"/>
+                        </Border.Background>
+                        <Border.Effect>
+                            <DropShadowEffect Color="#6A2CB6" BlurRadius="20" ShadowDepth="0" Opacity="0.42"/>
+                        </Border.Effect>
+                        <Border.Triggers>
+                            <EventTrigger RoutedEvent="Border.Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                        <DoubleAnimation Storyboard.TargetProperty="Background.(LinearGradientBrush.GradientStops)[0].Offset"
+                                                         From="-0.15" To="0.35" Duration="0:0:8"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="Background.(LinearGradientBrush.GradientStops)[1].Offset"
+                                                         From="0.3" To="0.8" Duration="0:0:8"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="Background.(LinearGradientBrush.GradientStops)[2].Offset"
+                                                         From="0.9" To="1.15" Duration="0:0:8"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Border.Triggers>
+                        <TextBox x:Name="CodeEditor"
+                                 Background="Transparent" Foreground="#F3F0FF"
+                                 BorderThickness="0"
+                                 FontFamily="Consolas" FontSize="13"
+                                 AcceptsReturn="True" AcceptsTab="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 TextWrapping="NoWrap"
+                                 Padding="15,10"
+                                 Visibility="Visible"
+                                 TextChanged="CodeEditor_TextChanged"
+                                 PreviewTextInput="CodeEditor_PreviewTextInput"
+                                 PreviewKeyDown="CodeEditor_PreviewKeyDown"/>
+                    </Border>
+
+                    <Border x:Name="ThemePanel" Grid.Row="2" Margin="10,6,10,12" Visibility="Collapsed"
+                            Background="#161622" CornerRadius="14" BorderBrush="#2D3350" BorderThickness="1">
+                        <StackPanel Margin="16">
+                            <TextBlock Text="Theme Presets" Foreground="#E6E6FF" FontSize="18" FontWeight="Bold"/>
+                            <TextBlock Text="Pick a color style for the whole menu accent." Foreground="#9AA4C5" Margin="0,6,0,14"/>
+                            <WrapPanel>
+                                <Button Content="Default" Tag="Default" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
+                                <Button Content="Ocean" Tag="Ocean" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
+                                <Button Content="Sunset" Tag="Sunset" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
+                                <Button Content="Forest" Tag="Forest" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
 
                     <RichTextBox x:Name="ConsoleOutput" Grid.Row="2"
                                  Background="#121212" Foreground="#E0E0E0"
@@ -235,6 +299,9 @@
                                     Click="ClearEditor_Click">
                                 <fa:IconBlock Icon="Trash" Width="16" Height="16"/>
                             </Button>
+                            <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Clear Console" Margin="3" Click="ClearConsole_Click">
+                                <fa:IconBlock Icon="Eraser" Width="16" Height="16"/>
+                            </Button>
                             <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Edit" Margin="3">
                                 <fa:IconBlock Icon="Edit" Width="16" Height="16"/>
                             </Button>
@@ -253,21 +320,18 @@
                     </Border>
                 </Grid>
 
-                <!-- RIGHT VERTICAL TOOLBAR -->
-                <Border Grid.Column="2" Background="#1A1A1A" CornerRadius="0,10,10,0"
-                        Width="60" Padding="0,15,0,0">
-                    <StackPanel HorizontalAlignment="Center">
-                        <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Code" Margin="0,8">
-                            <fa:IconBlock Icon="Code" Width="20" Height="20"/>
-                        </Button>
-                        <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Search" Margin="0,8">
-                            <fa:IconBlock Icon="Search" Width="20" Height="20"/>
-                        </Button>
-                        <Button Style="{StaticResource GlowButtonStyle}" ToolTip="Settings" Margin="0,8">
-                            <fa:IconBlock Icon="Gear" Width="20" Height="20"/>
-                        </Button>
-                    </StackPanel>
-                </Border>
+                <!-- RIGHT FLOATING TABS -->
+                <StackPanel Grid.Column="2" Margin="12,30,12,0" VerticalAlignment="Top">
+                    <Button x:Name="EditorTabBtnRight" Style="{StaticResource GlowButtonStyle}" ToolTip="Editor" Margin="0,0,0,10" Click="EditorTab_Click">
+                        <fa:IconBlock Icon="Code" Width="20" Height="20"/>
+                    </Button>
+                    <Button x:Name="ConsoleTabBtnRight" Style="{StaticResource GlowButtonStyle}" ToolTip="Console" Margin="0,0,0,10" Click="ConsoleTab_Click">
+                        <fa:IconBlock Icon="Terminal" Width="20" Height="20"/>
+                    </Button>
+                    <Button x:Name="SettingsTabBtn" Style="{StaticResource GlowButtonStyle}" ToolTip="Theme Settings" Click="SettingsTab_Click">
+                        <fa:IconBlock Icon="Gear" Width="20" Height="20"/>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
 

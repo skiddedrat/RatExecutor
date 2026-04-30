@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -24,7 +25,9 @@ namespace ScriptExecutorUI
             "newcclosure", "checkcaller", "loadstring", "getsenv", "getloadedmodules",
             "getrunningscripts", "getscriptbytecode", "debug.getinfo", "debug.getupvalues",
             "debug.getconstants", "setthreadidentity", "getthreadidentity", "setclipboard",
-            "rconsoleshow", "rconsoleprint", "rconsolewarn", "rconsoleerr", "WebSocket.connect"
+            "rconsoleshow", "rconsoleprint", "rconsolewarn", "rconsoleerr", "WebSocket.connect",
+            "function", "local", "if", "then", "elseif", "else", "for", "while", "repeat", "until",
+            "pcall", "xpcall", "pairs", "ipairs", "table.insert", "table.remove", "task.wait", "task.spawn"
         };
 
         public MainWindow()
@@ -185,26 +188,46 @@ namespace ScriptExecutorUI
         private void EditorTab_Click(object sender, RoutedEventArgs e)
         {
             CodeEditor.Visibility = Visibility.Visible;
+            EditorPanel.Visibility = Visibility.Visible;
             ConsoleOutput.Visibility = Visibility.Collapsed;
+            ThemePanel.Visibility = Visibility.Collapsed;
             EditorTabBtn.Background = new SolidColorBrush(Color.FromRgb(0x22, 0x22, 0x22));
             EditorTabBtn.Foreground = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0));
             ConsoleTabBtn.Background = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A));
             ConsoleTabBtn.Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88));
+            SettingsTabBtn.Background = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A));
+            SettingsTabBtn.Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88));
         }
 
         private void ConsoleTab_Click(object sender, RoutedEventArgs e)
         {
             CodeEditor.Visibility = Visibility.Collapsed;
+            EditorPanel.Visibility = Visibility.Collapsed;
             ConsoleOutput.Visibility = Visibility.Visible;
+            ThemePanel.Visibility = Visibility.Collapsed;
             ConsoleTabBtn.Background = new SolidColorBrush(Color.FromRgb(0x22, 0x22, 0x22));
             ConsoleTabBtn.Foreground = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0));
             EditorTabBtn.Background = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A));
             EditorTabBtn.Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88));
+            SettingsTabBtn.Background = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A));
+            SettingsTabBtn.Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88));
         }
 
         private void ClearEditor_Click(object sender, RoutedEventArgs e)
         {
+            var confirm = MessageBox.Show("Are you sure you want to clear the editor text?", "Clear editor", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (confirm != MessageBoxResult.Yes)
+                return;
             CodeEditor.Clear();
+        }
+
+        private void ClearConsole_Click(object sender, RoutedEventArgs e)
+        {
+            var confirm = MessageBox.Show("Are you sure you want to clear console output?", "Clear console", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (confirm != MessageBoxResult.Yes)
+                return;
+            ConsoleOutput.Document.Blocks.Clear();
+            AppendConsole("[Info] Console cleared.\n", Colors.DarkGray);
         }
 
         private void CodeEditor_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -239,6 +262,7 @@ namespace ScriptExecutorUI
             }
 
             SuggestionListBox.ItemsSource = matches;
+            SuggestionListBox.SelectedIndex = 0;
             SuggestionPopup.Visibility = Visibility.Visible;
         }
 
@@ -283,6 +307,92 @@ namespace ScriptExecutorUI
                 CodeEditor.Text = CodeEditor.Text.Insert(caret, "\"\"");
                 CodeEditor.CaretIndex = caret + 1;
                 e.Handled = true;
+            }
+        }
+
+        private void CodeEditor_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (!SuggestionPopup.IsVisible)
+                return;
+
+            if (e.Key == Key.Down)
+            {
+                if (SuggestionListBox.SelectedIndex < SuggestionListBox.Items.Count - 1)
+                    SuggestionListBox.SelectedIndex++;
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Up)
+            {
+                if (SuggestionListBox.SelectedIndex > 0)
+                    SuggestionListBox.SelectedIndex--;
+                e.Handled = true;
+            }
+            else if ((e.Key == Key.Enter || e.Key == Key.Tab) && SuggestionListBox.SelectedItem is string selected)
+            {
+                InsertSuggestion(selected);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                SuggestionPopup.Visibility = Visibility.Collapsed;
+                e.Handled = true;
+            }
+        }
+
+        private void SettingsTab_Click(object sender, RoutedEventArgs e)
+        {
+            CodeEditor.Visibility = Visibility.Collapsed;
+            EditorPanel.Visibility = Visibility.Collapsed;
+            ConsoleOutput.Visibility = Visibility.Collapsed;
+            ThemePanel.Visibility = Visibility.Visible;
+            SettingsTabBtn.Background = new SolidColorBrush(Color.FromRgb(0x22, 0x22, 0x22));
+            SettingsTabBtn.Foreground = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0));
+            EditorTabBtn.Background = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A));
+            EditorTabBtn.Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88));
+            ConsoleTabBtn.Background = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A));
+            ConsoleTabBtn.Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88));
+        }
+
+        private void ApplyThemeAccent(string accentHex, string editorStart, string editorMid, string editorEnd)
+        {
+            var accent = (Color)ColorConverter.ConvertFromString(accentHex);
+            ((SolidColorBrush)Resources["NeonPurple"]).Color = accent;
+            MainBorder.BorderBrush = new SolidColorBrush(Color.FromArgb(0x90, accent.R, accent.G, accent.B));
+            MainBorder.Effect = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                Color = accent,
+                ShadowDepth = 0,
+                BlurRadius = 24,
+                Opacity = 0.75
+            };
+
+            if (Resources["EditorAnimatedBackgroundBrush"] is LinearGradientBrush brush)
+            {
+                brush.GradientStops[0].Color = (Color)ColorConverter.ConvertFromString(editorStart);
+                brush.GradientStops[1].Color = (Color)ColorConverter.ConvertFromString(editorMid);
+                brush.GradientStops[2].Color = (Color)ColorConverter.ConvertFromString(editorEnd);
+            }
+        }
+
+        private void ThemePreset_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.Tag is not string theme)
+                return;
+
+            switch (theme)
+            {
+                case "Ocean":
+                    ApplyThemeAccent("#1FC8FF", "#071825", "#0B2E40", "#154E68");
+                    break;
+                case "Sunset":
+                    ApplyThemeAccent("#FF6A3D", "#26110B", "#4A1E12", "#6E2B14");
+                    break;
+                case "Forest":
+                    ApplyThemeAccent("#3DDC84", "#0D1E16", "#163125", "#204B36");
+                    break;
+                default:
+                    ApplyThemeAccent("#A020F0", "#101020", "#14142A", "#1F1235");
+                    break;
             }
         }
 
