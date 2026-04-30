@@ -1,8 +1,10 @@
 #nullable disable
 using SynapseZ;
+using Microsoft.Win32;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows;
@@ -46,6 +48,7 @@ namespace ScriptExecutorUI
         private int _lastCaretIndex = 0;
         private readonly object _syncLock = new object();
         private readonly ObservableCollection<EditorTabState> _editorTabs = new ObservableCollection<EditorTabState>();
+        private readonly ObservableCollection<string> _savedFiles = new ObservableCollection<string>();
         private EditorTabState _activeEditorTab;
         private bool _isSwitchingTabs;
         private const int MaxEditorTabs = 100;
@@ -129,6 +132,7 @@ namespace ScriptExecutorUI
             SynapseZAPI2.SessionOutput += OnSessionOutput;
             DetectRobloxAndConnection();
             InitializeEditorTabs();
+            SavedFilesList.ItemsSource = _savedFiles;
         }
 
         private void InitializeEditorTabs()
@@ -157,6 +161,27 @@ namespace ScriptExecutorUI
         {
             if (sender is Button button && button.Tag is EditorTabState tab)
                 ActivateEditorTab(tab);
+        }
+
+        private void CloseEditorTab_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.Tag is not EditorTabState tab)
+                return;
+            if (_editorTabs.Count <= 1)
+            {
+                AppendConsole("[Warn] Keep at least one tab open.\n", Colors.Orange);
+                return;
+            }
+
+            var closingActive = ReferenceEquals(_activeEditorTab, tab);
+            var index = _editorTabs.IndexOf(tab);
+            _editorTabs.Remove(tab);
+            if (closingActive)
+            {
+                var nextIndex = Math.Max(0, Math.Min(index, _editorTabs.Count - 1));
+                ActivateEditorTab(_editorTabs[nextIndex]);
+            }
+            UpdateEditorTabSlider();
         }
 
         private void ActivateEditorTab(EditorTabState tab)
@@ -200,13 +225,50 @@ namespace ScriptExecutorUI
 
         private void LoadAccordionData()
         {
-            Sections = new ObservableCollection<AccordionSection>
+            Sections = new ObservableCollection<AccordionSection>();
+        }
+
+        private void ImportScriptFiles_Click(object sender, RoutedEventArgs e)
+        {
+            var picker = new OpenFileDialog
             {
-                new AccordionSection { Name = "Tabs ", Items = { "Main.lua ", "AutoFarm.lua ", "ESP.lua " } },
-                new AccordionSection { Name = "Saved Scripts ", Items = { "Universal.lua ", "Dex.lua ", "DarkHub.lua " } },
-                new AccordionSection { Name = "Auto-execute ", Items = { "On attach ", "On injection ", "Custom event " } }
+                Multiselect = true,
+                Filter = "Script/Text Files (*.lua;*.txt)|*.lua;*.txt"
             };
-            AccordionItems.ItemsSource = Sections;
+
+            if (picker.ShowDialog() != true)
+                return;
+
+            foreach (var file in picker.FileNames.Where(File.Exists))
+            {
+                if (!_savedFiles.Contains(file))
+                    _savedFiles.Add(file);
+            }
+        }
+
+        private void SavedFilesList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (SavedFilesList.SelectedItem is not string filePath || !File.Exists(filePath))
+                return;
+
+            var result = MessageBox.Show($"Open file '{Path.GetFileName(filePath)}' in a new tab? ", "Open saved file ", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes)
+                return;
+
+            if (_editorTabs.Count >= MaxEditorTabs)
+            {
+                AppendConsole("[Warn] Maximum of 100 tabs reached.\n", Colors.Orange);
+                return;
+            }
+
+            PersistActiveEditorTab();
+            var tab = new EditorTabState
+            {
+                Title = Path.GetFileName(filePath),
+                Content = File.ReadAllText(filePath)
+            };
+            _editorTabs.Add(tab);
+            ActivateEditorTab(tab);
         }
 
         private void ApplyStaticGlowEffects()

@@ -296,32 +296,13 @@
                 <!-- LEFT SIDEBAR -->
                 <Border Grid.Column="0" Margin="0,10,8,10" Background="#D0080B17" CornerRadius="18" Padding="18" BorderBrush="#553A3F65" BorderThickness="1.2">
                     <StackPanel Margin="0,15,0,0">
-                        <TextBlock Text="Abyss Reborn" FontSize="24" FontWeight="Bold"
-                                   Foreground="{StaticResource NeonPurple}" Margin="4,0,0,4"/>
-                        <ItemsControl x:Name="AccordionItems">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Margin="0,0,0,8">
-                                        <ToggleButton Content="{Binding Name}"
-                                                      Style="{StaticResource AccordionHeaderStyle}"
-                                                      IsChecked="{Binding IsExpanded, Mode=TwoWay}"
-                                                      Cursor="Hand"/>
-                                        <ContentControl Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVis}}"
-                                                        Margin="20,5,0,0">
-                                            <ItemsControl ItemsSource="{Binding Items}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding}"
-                                                                   Foreground="#C0C0C0" Margin="0,4"
-                                                                   FontSize="12" Cursor="Hand"/>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </ContentControl>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <TextBlock Text="Abyss Reborn" FontSize="24" FontWeight="Bold" Foreground="{StaticResource NeonPurple}" Margin="4,0,0,4"/>
+                        <TextBlock Text="UI made by: lucid.id on Discord" Foreground="#D9CBFF" FontSize="12" Margin="4,0,0,14"/>
+                        <Button Content="Import .lua / .txt" Style="{StaticResource GlowButtonStyle}" Margin="0,0,0,10" Click="ImportScriptFiles_Click"/>
+                        <TextBlock Text="Saved Files" Foreground="#DCCBFF" FontFamily="Consolas" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <ListBox x:Name="SavedFilesList"
+                                 Background="#14161F" Foreground="#F0F0F0" BorderThickness="1" BorderBrush="#443A4A71"
+                                 MinHeight="280" MouseDoubleClick="SavedFilesList_MouseDoubleClick"/>
                     </StackPanel>
                 </Border>
 
@@ -453,10 +434,10 @@
                                                 </ItemsControl.ItemsPanel>
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Button Content="{Binding Title}" Margin="0,0,6,0" Padding="10,3"
-                                                                Click="EditorTabItem_Click"
-                                                                Tag="{Binding}"
-                                                                Style="{StaticResource GlowButtonStyle}"/>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,6,0">
+                                                            <Button Content="{Binding Title}" Padding="10,3" Click="EditorTabItem_Click" Tag="{Binding}" Style="{StaticResource GlowButtonStyle}"/>
+                                                            <Button Content="×" Width="24" Margin="4,0,0,0" Click="CloseEditorTab_Click" Tag="{Binding}" Style="{StaticResource GlowButtonStyle}"/>
+                                                        </StackPanel>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
