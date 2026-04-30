@@ -823,13 +823,6 @@ namespace ScriptExecutorUI
             CodeEditor.CaretIndex = caret + singleLineInsert.Length;
         }
 
-        private void RealtimeHelperToggle_Changed(object sender, RoutedEventArgs e)
-        {
-            _isRealtimeHelperEnabled = RealtimeHelperToggle.IsChecked == true;
-            if (!_isRealtimeHelperEnabled)
-                SuggestionPopup.IsOpen = false;
-        }
-
         private void GeneralAction_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button b || b.Tag is not string action)
