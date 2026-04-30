@@ -273,10 +273,24 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <Border Grid.Row="0" Background="#2A1A45" CornerRadius="10" Margin="8,6,8,4" Padding="8,4">
-                                <TextBlock x:Name="PinnedScopeText" Text="Scope: Global"
-                                           Foreground="#DCCBFF" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"/>
-                            </Border>
+                            <Grid Grid.Row="0" Margin="8,6,8,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Background="#2A1A45" CornerRadius="10" Padding="8,4" Margin="0,0,8,0">
+                                    <TextBlock x:Name="PinnedScopeText" Text="Scope: Global"
+                                               Foreground="#DCCBFF" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"/>
+                                </Border>
+                                <Border Grid.Column="1" Background="#241637" CornerRadius="10" Padding="8,4" BorderBrush="#5E4A7E" BorderThickness="1">
+                                    <StackPanel>
+                                        <TextBlock x:Name="SyntaxStatusText" Text="Syntax status: Ready"
+                                                   Foreground="#9CD9A7" FontSize="11" FontFamily="Consolas"/>
+                                        <TextBlock Text="Tip: Keep realtime helper on for syntax + suggestions."
+                                                   Foreground="#AFBCE0" FontSize="10"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
                             <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="44"/>
@@ -335,7 +349,7 @@
                             <CheckBox x:Name="RealtimeHelperToggle" Content="Enable realtime code helper"
                                       Foreground="#DDE9FF" IsChecked="True" Margin="0,0,0,10"
                                       Checked="RealtimeHelperToggle_Changed" Unchecked="RealtimeHelperToggle_Changed"/>
-                            <TextBlock x:Name="SyntaxStatusText" Text="Syntax status: Ready"
+                            <TextBlock Text="Syntax checks run while you type when helper is enabled."
                                        Foreground="#9CD9A7" FontSize="11" Margin="0,0,0,12"/>
                             <WrapPanel>
                                 <Button Content="Default" Tag="Default" Style="{StaticResource GlowButtonStyle}" Margin="0,0,8,8" Click="ThemePreset_Click"/>
