@@ -300,7 +300,7 @@
                                     <TextBlock x:Name="LineNumbersText"
                                                Foreground="#6E84B4"
                                                FontFamily="Consolas"
-                                               FontSize="12"
+                                               FontSize="13"
                                                TextAlignment="Right"
                                                Padding="0,10,8,0"
                                                Text="1"/>
