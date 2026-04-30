@@ -302,7 +302,7 @@
                                                FontFamily="Consolas"
                                                FontSize="12"
                                                TextAlignment="Right"
-                                               Padding="0,12,8,0"
+                                               Padding="0,10,8,0"
                                                Text="1"/>
                                 </ScrollViewer>
                             </Border>
@@ -311,12 +311,12 @@
                                              IsReadOnly="True" IsHitTestVisible="False"
                                              Background="Transparent" Foreground="#F3F0FF"
                                              BorderThickness="0" Padding="12,10"
-                                             Margin="0,1,0,0"
+                                             Margin="0"
                                              FontFamily="Consolas" FontSize="13"
                                              VerticalScrollBarVisibility="Hidden"
                                              HorizontalScrollBarVisibility="Hidden"/>
                                 <TextBox x:Name="CodeEditor"
-                                         Background="Transparent" Foreground="#03FFFFFF"
+                                         Background="Transparent" Foreground="Transparent"
                                          CaretBrush="#FFFFFF"
                                          BorderThickness="0"
                                          FontFamily="Consolas" FontSize="13"

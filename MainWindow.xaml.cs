@@ -691,12 +691,12 @@ namespace ScriptExecutorUI
                 PagePadding = new Thickness(0),
                 TextAlignment = TextAlignment.Left,
                 LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
-                LineHeight = 16
+                LineHeight = 15.6
             };
             var paragraph = new Paragraph
             {
                 Margin = new Thickness(0),
-                LineHeight = 16
+                LineHeight = 15.6
             };
 
             var keywords = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase)
